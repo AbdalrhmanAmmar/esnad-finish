@@ -1,0 +1,21 @@
+{
+  "name": "Esnad App",
+  "short_name": "Esnad",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF6F61",
+  "description": "Esnad App - Manage your reports and operations efficiently.",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./logo.svg",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
