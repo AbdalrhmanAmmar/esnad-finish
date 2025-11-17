@@ -18,6 +18,7 @@ import { usePharmacyVisitStore } from '@/stores/pharmacyVisitStore';
 import { getSalesRepResources } from '@/api/salesClients';
 import { useAuthStore } from '@/stores/authStore';
 import { createPharmacyRequest, PharmacyRequestData } from '@/api/PharmacyRequests';
+import { z } from 'zod';
 
 
 
@@ -26,6 +27,7 @@ const PharmacyVisitForm = () => {
   const { user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
   const {
     pharmacies,
@@ -124,18 +126,66 @@ const PharmacyVisitForm = () => {
     handleInputChange('receiptImage', file);
   };
 
+  const visitSchema = z.object({
+    visitDate: z.string().min(1, 'تاريخ الزيارة مطلوب').regex(/^\d{4}-\d{2}-\d{2}$/),
+    pharmacyId: z.string().min(1, 'يجب اختيار الصيدلية'),
+    draftDistribution: z.enum(['نعم', 'لا'], { errorMap: () => ({ message: 'يرجى اختيار نعم أو لا' }) }),
+    introductoryVisit: z.enum(['نعم', 'لا'], { errorMap: () => ({ message: 'يرجى اختيار نعم أو لا' }) }),
+    order: z.enum(['نعم', 'لا'], { errorMap: () => ({ message: 'يرجى اختيار نعم أو لا' }) }),
+    collection: z.enum(['نعم', 'لا'], { errorMap: () => ({ message: 'يرجى اختيار نعم أو لا' }) }),
+    notes: z.string().optional(),
+    introVisitData: z.string().optional(),
+    introVisitNotes: z.string().optional(),
+    introVisitImage: z.any().optional(),
+    amount: z.any().optional(),
+    receiptNumber: z.string().optional(),
+    receiptImage: z.any().optional(),
+    orderProducts: z.array(z.object({ _id: z.string(), quantity: z.number(), selected: z.boolean() })),
+  }).superRefine((data, ctx) => {
+    if (data.introductoryVisit === 'نعم') {
+      if (!data.introVisitData || data.introVisitData.trim() === '') {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'بيانات الزيارة التعريفية مطلوبة', path: ['introVisitData'] });
+      }
+      if (!data.introVisitNotes || data.introVisitNotes.trim() === '') {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'ملاحظات الزيارة مطلوبة', path: ['introVisitNotes'] });
+      }
+      const hasImage = typeof File !== 'undefined' && data.introVisitImage instanceof File;
+      if (!hasImage) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'صورة الزيارة مطلوبة', path: ['introVisitImage'] });
+      }
+    }
+    if (data.order === 'نعم') {
+      const validSelected = data.orderProducts.filter(p => p.selected && p.quantity > 0);
+      if (validSelected.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'يجب اختيار منتج واحد على الأقل مع كمية أكبر من 0', path: ['orderProducts'] });
+      }
+    }
+    if (data.collection === 'نعم') {
+      const amt = typeof data.amount === 'string' ? parseFloat(data.amount) : Number(data.amount);
+      if (!amt || isNaN(amt) || amt <= 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'المبلغ مطلوب ويجب أن يكون أكبر من 0', path: ['amount'] });
+      }
+      if (!data.receiptNumber || data.receiptNumber.trim() === '') {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'رقم الوصل مطلوب', path: ['receiptNumber'] });
+      }
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setValidationErrors({});
 
     try {
-      // Validate required fields
-      if (!currentVisit.visitDate || !currentVisit.pharmacyId) {
-        toast({
-          title: "بيانات مطلوبة",
-          description: "يرجى ملء جميع الحقول المطلوبة",
-          variant: "destructive",
+      const parsed = visitSchema.safeParse(currentVisit);
+      if (!parsed.success) {
+        const errs: Record<string, string> = {};
+        parsed.error.issues.forEach(issue => {
+          const key = issue.path[0]?.toString() || 'form';
+          if (!errs[key]) errs[key] = issue.message;
         });
+        setValidationErrors(errs);
+        toast({ title: 'تحقق البيانات', description: Object.values(errs)[0], variant: 'destructive' });
         return;
       }
 
@@ -171,7 +221,7 @@ const PharmacyVisitForm = () => {
       // Add collection details if has collection
       if (requestData.hasCollection) {
         requestData.collectionDetails = {
-          amount: parseFloat(currentVisit.amount) || 0,
+          amount: parseFloat(currentVisit.amount as any) || 0,
           receiptNumber: currentVisit.receiptNumber || '',
           receiptImage: currentVisit.receiptImage || undefined
         };
@@ -242,9 +292,10 @@ const PharmacyVisitForm = () => {
   popperClassName="z-50"
   showPopperArrow={false}
   locale="ar"
-/>
+          />
                   <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary pointer-events-none" />
                 </div>
+                {validationErrors.visitDate && <p className="text-destructive text-sm">{validationErrors.visitDate}</p>}
               </div>
 
               {/* اسم الصيدلية */}
@@ -265,6 +316,7 @@ const PharmacyVisitForm = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {validationErrors.pharmacyId && <p className="text-destructive text-sm">{validationErrors.pharmacyId}</p>}
               </div>
             </div>
 
@@ -290,6 +342,7 @@ const PharmacyVisitForm = () => {
                         <Label htmlFor="draft-no" className="cursor-pointer font-semibold text-primary">لا</Label>
                       </div>
                     </RadioGroup>
+                    {validationErrors.draftDistribution && <p className="text-destructive text-sm mt-2">{validationErrors.draftDistribution}</p>}
                   </div>
                 </div>
 
@@ -311,6 +364,7 @@ const PharmacyVisitForm = () => {
                         <Label htmlFor="intro-no" className="cursor-pointer font-semibold text-primary">لا</Label>
                       </div>
                     </RadioGroup>
+                    {validationErrors.introductoryVisit && <p className="text-destructive text-sm mt-2">{validationErrors.introductoryVisit}</p>}
                   </div>
                 </div>
 
@@ -332,6 +386,7 @@ const PharmacyVisitForm = () => {
                         <Label htmlFor="order-no" className="cursor-pointer font-semibold text-primary">لا</Label>
                       </div>
                     </RadioGroup>
+                    {validationErrors.order && <p className="text-destructive text-sm mt-2">{validationErrors.order}</p>}
                   </div>
                 </div>
 
@@ -353,6 +408,7 @@ const PharmacyVisitForm = () => {
                         <Label htmlFor="collection-no" className="cursor-pointer font-semibold text-primary">لا</Label>
                       </div>
                     </RadioGroup>
+                    {validationErrors.collection && <p className="text-destructive text-sm mt-2">{validationErrors.collection}</p>}
                   </div>
                 </div>
               </div>
@@ -373,6 +429,7 @@ const PharmacyVisitForm = () => {
   </div>
 
                   </div>
+                  {validationErrors.orderProducts && <p className="text-destructive text-sm mb-4">{validationErrors.orderProducts}</p>}
               
                   
                   <div className="overflow-x-auto">
@@ -448,7 +505,9 @@ const PharmacyVisitForm = () => {
                         onChange={(e) => handleInputChange('receiptNumber', e.target.value)}
                         className="mt-1"
                       />
+                      {validationErrors.receiptNumber && <p className="text-destructive text-sm mt-1">{validationErrors.receiptNumber}</p>}
                     </div>
+                    {validationErrors.introVisitData && <p className="text-destructive text-sm mt-1">{validationErrors.introVisitData}</p>}
                     <div>
                       <Label htmlFor="amount" className="text-sm font-medium text-foreground">
                         المبلغ
@@ -461,6 +520,7 @@ const PharmacyVisitForm = () => {
                         onChange={(e) => handleInputChange('amount', e.target.value)}
                         className="mt-1"
                       />
+                      {validationErrors.amount && <p className="text-destructive text-sm mt-1">{validationErrors.amount}</p>}
                     </div>
                   </div>
 
@@ -517,6 +577,7 @@ const PharmacyVisitForm = () => {
                         className="mt-1 min-h-[100px]"
                       />
                     </div>
+                    {validationErrors.introVisitNotes && <p className="text-destructive text-sm mt-1">{validationErrors.introVisitNotes}</p>}
 
                     <div>
                       <Label htmlFor="introVisitImage" className="text-sm font-medium text-foreground">
@@ -530,9 +591,8 @@ const PharmacyVisitForm = () => {
                           onChange={handleFileChange}
                           className="cursor-pointer"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          يرجى رفع صورة توثق الزيارة التعريفية
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">يرجى رفع صورة توثق الزيارة التعريفية</p>
+                        {validationErrors.introVisitImage && <p className="text-destructive text-sm mt-1">{validationErrors.introVisitImage}</p>}
                       </div>
                     </div>
                   </div>

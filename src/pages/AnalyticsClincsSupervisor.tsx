@@ -54,6 +54,7 @@ interface ProcessedVisit {
   samplesCount: number;
   notes?: string;
   medicalRepName: string;
+  medicalRepUsername: string;
   teamArea: string;
   teamProducts: string;
   doctorId: string;
@@ -108,20 +109,27 @@ const AnalyticsClincsSupervisor: React.FC = () => {
       samplesCount: visit.products.reduce((sum, p) => sum + p.samplesCount, 0),
       notes: visit.notes,
       medicalRepName: visit.medicalRep.name,
+      medicalRepUsername: visit.medicalRep.username,
       teamArea: visit.doctor.city, // Using city as team area
       teamProducts: visit.products.map(p => p.brand).join(', '),
       doctorId: visit.doctor._id
     }));
   };
 
-  // Get unique values for filters
-  const uniqueDoctors = [...new Set(visits.map(visit => visit.doctorName))];
-  const uniqueMedicalReps = [...new Set(visits.map(visit => visit.medicalRepName))];
-  const uniqueSpecialties = [...new Set(visits.map(visit => visit.specialty))];
-  const uniqueSegments = [...new Set(visits.map(visit => visit.classification))];
-  const uniqueBrands = [...new Set(visits.map(visit => visit.brand))];
-  const uniqueClinics = [...new Set(visits.map(visit => visit.clinicName))];
-  const uniqueProducts = [...new Set(visits.flatMap(visit => visit.products))];
+  // Keep a stable copy of all visits to build filter lists
+  const [allVisits, setAllVisits] = useState<ProcessedVisit[]>([]);
+  useEffect(() => {
+    setAllVisits(visits);
+  }, [visits]);
+
+  // Get unique values for filters from allVisits and ignore empty values
+  const uniqueDoctors = [...new Set(allVisits.map(visit => visit.doctorName).filter(v => v && v.trim() !== ''))];
+  const uniqueMedicalReps = [...new Set(allVisits.map(visit => visit.medicalRepUsername).filter(v => v && v.trim() !== ''))];
+  const uniqueSpecialties = [...new Set(allVisits.map(visit => visit.specialty).filter(v => v && v.trim() !== ''))];
+  const uniqueSegments = [...new Set(allVisits.map(visit => visit.classification).filter(v => v && v.trim() !== ''))];
+  const uniqueBrands = [...new Set(allVisits.map(visit => visit.brand).filter(v => v && v.trim() !== ''))];
+  const uniqueClinics = [...new Set(allVisits.map(visit => visit.clinicName).filter(v => v && v.trim() !== ''))];
+  const uniqueProducts = [...new Set(allVisits.flatMap(visit => visit.products).filter(v => v && v.trim() !== ''))];
 
   // Fetch data from API
   const fetchVisitsData = async () => {
@@ -131,14 +139,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
         page: currentPage,
         limit: pageLimit,
         startDate: fromDate || undefined,
-        endDate: toDate || undefined,
-        doctorName: selectedDoctor !== 'all' ? selectedDoctor : undefined,
-        medicalRepName: selectedMedicalRep !== 'all' ? selectedMedicalRep : undefined,
-        specialization: selectedSpecialty !== 'all' ? selectedSpecialty : undefined,
-        segment: selectedSegment !== 'all' ? selectedSegment : undefined,
-        clinic: selectedClinic !== 'all' ? selectedClinic : undefined,
-        brand: selectedBrand !== 'all' ? selectedBrand : undefined,
-        products: selectedProducts.length > 0 ? selectedProducts : undefined
+        endDate: toDate || undefined
       };
 
       const response = await getVisitsBySupervisor(supervisorId, params);
@@ -159,7 +160,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
   // Load data on component mount and when filters change
   useEffect(() => {
     fetchVisitsData();
-  }, [supervisorId, currentPage, fromDate, toDate, selectedDoctor, selectedMedicalRep, selectedSpecialty, selectedSegment, selectedBrand, selectedClinic, selectedProducts]);
+  }, [supervisorId, currentPage, fromDate, toDate]);
 
   // Apply local filters (for immediate UI response)
   useEffect(() => {
@@ -171,7 +172,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
     }
     
     if (selectedMedicalRep !== 'all') {
-      filtered = filtered.filter(visit => visit.medicalRepName === selectedMedicalRep);
+      filtered = filtered.filter(visit => visit.medicalRepUsername === selectedMedicalRep);
     }
     
     if (selectedSpecialty !== 'all') {
@@ -994,7 +995,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
                         {
                           label: 'عدد الزيارات',
                           data: uniqueMedicalReps.slice(0, 10).map(rep => 
-                            filteredVisits.filter(v => v.medicalRepName === rep).length
+                            filteredVisits.filter(v => v.medicalRepUsername === rep).length
                           ),
                           backgroundColor: (ctx) => {
                             const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 400);
@@ -1014,7 +1015,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
                           label: 'عدد العينات الموزعة',
                           data: uniqueMedicalReps.slice(0, 10).map(rep => 
                             filteredVisits
-                              .filter(v => v.medicalRepName === rep)
+                              .filter(v => v.medicalRepUsername === rep)
                               .reduce((sum, v) => sum + v.samplesCount, 0)
                           ),
                           backgroundColor: (ctx) => {
@@ -1118,8 +1119,8 @@ const AnalyticsClincsSupervisor: React.FC = () => {
                   <div className="text-2xl font-bold text-green-600 mb-1">
                     {uniqueMedicalReps.length > 0 ? 
                       uniqueMedicalReps.reduce((best, rep) => {
-                        const repVisits = filteredVisits.filter(v => v.medicalRepName === rep).length;
-                        const bestVisits = filteredVisits.filter(v => v.medicalRepName === best).length;
+                        const repVisits = filteredVisits.filter(v => v.medicalRepUsername === rep).length;
+                        const bestVisits = filteredVisits.filter(v => v.medicalRepUsername === best).length;
                         return repVisits > bestVisits ? rep : best;
                       }, uniqueMedicalReps[0]) : 'لا يوجد'
                     }
@@ -1127,7 +1128,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
                   <div className="text-sm text-gray-600">
                     {uniqueMedicalReps.length > 0 ? 
                       Math.max(...uniqueMedicalReps.map(rep => 
-                        filteredVisits.filter(v => v.medicalRepName === rep).length
+                        filteredVisits.filter(v => v.medicalRepUsername === rep).length
                       )) : 0
                     } زيارة
                   </div>
@@ -1371,7 +1372,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
                   {
                     label: 'عدد الزيارات الشهرية',
                     data: uniqueMedicalReps.slice(0, 8).map(rep => 
-                      filteredVisits.filter(v => v.medicalRepName === rep).length
+                      filteredVisits.filter(v => v.medicalRepUsername === rep).length
                     ),
                     borderColor: 'rgb(59, 130, 246)',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -1390,7 +1391,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
                   {
                     label: 'معدل توزيع العينات',
                     data: uniqueMedicalReps.slice(0, 8).map(rep => {
-                      const repVisits = filteredVisits.filter(v => v.medicalRepName === rep);
+                      const repVisits = filteredVisits.filter(v => v.medicalRepUsername === rep);
                       const totalSamples = repVisits.reduce((sum, v) => sum + v.samplesCount, 0);
                       return repVisits.length > 0 ? Math.round(totalSamples / repVisits.length) : 0;
                     }),
@@ -1411,7 +1412,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
                   {
                     label: 'تنوع العيادات المزارة',
                     data: uniqueMedicalReps.slice(0, 8).map(rep => {
-                      const repVisits = filteredVisits.filter(v => v.medicalRepName === rep);
+                      const repVisits = filteredVisits.filter(v => v.medicalRepUsername === rep);
                       const uniqueClinicsByRep = [...new Set(repVisits.map(v => v.clinicName))];
                       return uniqueClinicsByRep.length;
                     }),
@@ -1466,7 +1467,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
                       },
                       afterBody: function(context) {
                         const repName = context[0].label;
-                        const repVisits = filteredVisits.filter(v => v.medicalRepName === repName);
+                        const repVisits = filteredVisits.filter(v => v.medicalRepUsername === repName);
                         const totalSamples = repVisits.reduce((sum, v) => sum + v.samplesCount, 0);
                         return [
                           `إجمالي العينات الموزعة: ${totalSamples}`,
