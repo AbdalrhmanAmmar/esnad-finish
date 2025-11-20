@@ -45,6 +45,7 @@ ChartJS.register(
 interface ProcessedVisit {
   _id: string;
   visitDate: string;
+  visitDateISO: string;
   doctorName: string;
   specialty: string;
   clinicName: string;
@@ -100,6 +101,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
         day: 'numeric', 
         calendar: 'gregory' 
       }),
+      visitDateISO: visit.visitDate,
       doctorName: visit.doctor.name,
       specialty: 'غير محدد', // Default value since specialty is not in new structure
       clinicName: visit.doctor.organizationName,
@@ -199,7 +201,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
     
     if (fromDate) {
       filtered = filtered.filter(visit => {
-        const visitDate = new Date(visit.visitDate);
+        const visitDate = new Date(visit.visitDateISO);
         const filterDate = new Date(fromDate);
         return visitDate >= filterDate;
       });
@@ -207,7 +209,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
     
     if (toDate) {
       filtered = filtered.filter(visit => {
-        const visitDate = new Date(visit.visitDate);
+        const visitDate = new Date(visit.visitDateISO);
         const filterDate = new Date(toDate);
         return visitDate <= filterDate;
       });
@@ -355,7 +357,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
     // Calculate monthly trends
     const monthlyData = Array(12).fill(0).map(() => ({ visits: 0, revenue: 0 }));
     visits.forEach(visit => {
-      const date = new Date(visit.visitDate);
+      const date = new Date(visit.visitDateISO);
       const month = date.getMonth();
       monthlyData[month].visits += 1;
       monthlyData[month].revenue += visit.samplesCount * 50;
