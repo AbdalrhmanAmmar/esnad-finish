@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -11,11 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, User, Package, FileText, Users, Plus, X, Search, Clock, MapPin } from 'lucide-react';
+import { CalendarDays, User, Package, FileText, Users, Plus, X, Search, MapPin, MessageSquare, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createVisit, CreateVisitRequest, VisitProduct } from '@/api/Visits';
 import { getSupervisors, MedicalRepDoctor, MedicalRepProduct } from '@/api/MedicalRep';
@@ -28,6 +27,129 @@ interface Supervisor {
   lastName: string;
   username: string;
 }
+
+// Custom Select with Search Component
+interface CustomSelectProps {
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  options: Array<{
+    value: string;
+    label: string;
+    subtitle?: string;
+    badge?: string;
+  }>;
+  disabled?: boolean;
+  searchPlaceholder?: string;
+}
+
+const CustomSelect: React.FC<CustomSelectProps> = ({
+  value,
+  onValueChange,
+  placeholder,
+  options,
+  disabled = false,
+  searchPlaceholder = "ابحث..."
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const selectRef = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = options.filter(option =>
+    option.label.toLowerCase().includes(search.toLowerCase()) ||
+    option.subtitle?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setSearch('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (optionValue: string) => {
+    onValueChange(optionValue);
+    setIsOpen(false);
+    setSearch('');
+  };
+
+  return (
+    <div className="relative" ref={selectRef}>
+      <button
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`w-full text-right pr-4 pl-12 py-3 bg-background border-2 border-border hover:border-primary transition-all duration-200 rounded-xl shadow-sm flex items-center justify-between ${
+          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+        } ${isOpen ? 'border-primary ring-2 ring-primary/20' : ''}`}
+      >
+        <span className={`${!selectedOption ? 'text-muted-foreground' : ''}`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-2 bg-background border-2 border-primary rounded-xl shadow-lg max-h-80 overflow-hidden">
+          {/* Search Input */}
+          <div className="p-3 border-b border-border sticky top-0 bg-background">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="text-right pr-10 pl-3 border-border focus:border-primary"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
+
+          {/* Options List */}
+          <div className="overflow-y-auto max-h-60">
+            {filteredOptions.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground">
+                لا توجد نتائج
+              </div>
+            ) : (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleSelect(option.value)}
+                  className={`w-full text-right p-4 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 ${
+                    value === option.value ? 'bg-primary/10 border-r-2 border-primary' : ''
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium text-base">{option.label}</span>
+                    {option.subtitle && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 justify-end">
+                        {option.badge && (
+                          <Badge variant="secondary" className="text-xs">
+                            {option.badge}
+                          </Badge>
+                        )}
+                        <span>{option.subtitle}</span>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CreateVisit: React.FC = () => {
   const navigate = useNavigate();
@@ -56,20 +178,16 @@ const CreateVisit: React.FC = () => {
   const [selectedMessage, setSelectedMessage] = useState<string>('');
   const [selectedSamplesCount, setSelectedSamplesCount] = useState<number>(0);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const [doctorSearch, setDoctorSearch] = useState<string>('');
-  const [productSearch, setProductSearch] = useState<string>('');
   const [activeStep, setActiveStep] = useState<number>(0);
 
-  // Load initial data - fetch directly if not in store
+  // Load initial data
   useEffect(() => {
     const loadData = async () => {
       if (storeDoctors.length > 0 && storeProducts.length > 0) {
-        // Use data from store
         setDoctors(storeDoctors);
         setProducts(storeProducts);
         setLoadingData(false);
       } else {
-        // Fetch data directly if not in store
         if (!user?._id) return;
         
         try {
@@ -80,7 +198,6 @@ const CreateVisit: React.FC = () => {
           if (response.success) {
             setDoctors(response.data.doctors);
             setProducts(response.data.products);
-            // Also save to store for future use
             const { useMedicalRepStore } = await import('@/stores/medicalRepStore');
             useMedicalRepStore.getState().setData(response.data.doctors, response.data.products);
           }
@@ -99,8 +216,6 @@ const CreateVisit: React.FC = () => {
 
     loadData();
   }, [storeDoctors, storeProducts, user?._id, toast]);
-
-  // Load supervisors when needed
 
   // Get product messages from store data
   const getProductMessages = (productId: string) => {
@@ -222,30 +337,26 @@ const CreateVisit: React.FC = () => {
     return message ? message.text || message.tag : 'رسالة غير معروفة';
   };
 
-  const getDoctorName = (doctorId: string) => {
-    const doctor = doctors.find(d => d._id === doctorId);
-    return doctor ? doctor.name : 'طبيب غير معروف';
-  };
+  // Prepare options for custom selects
+  const doctorOptions = doctors.map(doctor => ({
+    value: doctor._id,
+    label: doctor.name,
+    subtitle: `${doctor.specialty} - ${doctor.organizationName}`,
+    badge: doctor.specialty
+  }));
 
-  const filteredDoctors = doctors.filter(d => {
-    const q = doctorSearch.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      d.name?.toLowerCase().includes(q) ||
-      d.specialty?.toLowerCase().includes(q) ||
-      d.organizationName?.toLowerCase().includes(q)
-    );
-  });
+  const productOptions = products.map(product => ({
+    value: product._id,
+    label: product.name,
+    subtitle: `كود: ${product.code}`,
+    badge: product.brand as string
+  }));
 
-  const filteredProducts = products.filter(p => {
-    const q = productSearch.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      p.name?.toLowerCase().includes(q) ||
-      p.code?.toString().toLowerCase().includes(q) ||
-      (p.brand as any)?.toLowerCase?.().includes(q)
-    );
-  });
+  const messageOptions = getProductMessages(selectedProduct).map((message: any, index: number) => ({
+    value: index.toString(),
+    label: message.text || message.tag,
+    subtitle: message.tag || 'رسالة'
+  }));
 
   // Steps for mobile view
   const steps = [
@@ -266,20 +377,20 @@ const CreateVisit: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-6 px-4">
-      <div className="container mx-auto max-w-4xl">
-        {/* Header with gradient */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-4">
+      <div className="w-full px-4 sm:container sm:mx-auto sm:max-w-4xl">
+        {/* Header */}
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2">
             تسجيل زيارة جديدة
           </h1>
-          <p className="text-muted-foreground max-w-md mx-auto">
+          <p className="text-muted-foreground max-w-md mx-auto text-sm sm:text-base">
             قم بتسجيل زيارة جديدة للطبيب مع تحديد المنتجات والرسائل المناسبة
           </p>
         </div>
 
         {/* Progress Steps for Mobile */}
-        <div className="mb-6 md:hidden">
+        <div className="mb-6 sm:hidden">
           <div className="flex justify-between items-center relative">
             <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
             <div 
@@ -310,25 +421,25 @@ const CreateVisit: React.FC = () => {
         <Card className="shadow-xl border-0 overflow-hidden">
           <div className="bg-gradient-to-r from-primary to-blue-600 p-1"></div>
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 justify-center text-2xl">
+            <CardTitle className="flex items-center gap-3 justify-center text-xl sm:text-2xl">
               <div className="p-2 bg-primary/10 rounded-full">
-                <CalendarDays className="h-6 w-6 text-primary" />
+                <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
               تسجيل زيارة عادية
             </CardTitle>
-            <CardDescription className="text-center">
+            <CardDescription className="text-center text-sm sm:text-base">
               قم بتسجيل زيارة جديدة للطبيب مع تحديد المنتجات والرسائل المناسبة
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
             <form onSubmit={handleSubmit} className="space-y-6" dir="rtl">
-              {/* Step 1: Date & Doctor - Show on all screens but control visibility on mobile */}
-              <div className={`space-y-6 ${activeStep !== 0 ? 'hidden md:block' : ''}`}>
+              {/* Step 1: Date & Doctor */}
+              <div className={`space-y-6 ${activeStep !== 0 ? 'hidden sm:block' : ''}`}>
                 {/* Visit Date */}
                 <div className="space-y-3">
-                  <Label htmlFor="visitDate" className="flex items-center gap-2 justify-end text-lg font-medium">
+                  <Label htmlFor="visitDate" className="flex items-center gap-2 justify-end text-base sm:text-lg font-medium">
                     <span>تاريخ الزيارة *</span>
-                    <CalendarDays className="h-5 w-5 text-primary" />
+                    <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </Label>
                   <div className="relative">
                     <DatePicker
@@ -348,63 +459,31 @@ const CreateVisit: React.FC = () => {
                       showPopperArrow={false}
                       locale="ar"
                     />
-                    <CalendarDays className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-primary pointer-events-none" />
+                    <CalendarDays className="absolute right-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-primary pointer-events-none" />
                   </div>
                 </div>
 
                 {/* Doctor Selection */}
                 <div className="space-y-3">
-                  <Label className="flex items-center gap-2 justify-end text-lg font-medium">
+                  <Label className="flex items-center gap-2 justify-end text-base sm:text-lg font-medium">
                     <span>اسم الطبيب *</span>
-                    <User className="h-5 w-5 text-primary" />
+                    <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      value={doctorSearch}
-                      onChange={(e) => setDoctorSearch(e.target.value)}
-                      placeholder="ابحث باسم الطبيب أو التخصص أو المؤسسة"
-                      className="text-right pr-3 pl-10 border-2 border-border hover:border-primary focus:border-primary transition-colors rounded-xl shadow-sm"
-                    />
-                  </div>
-                  <Select
+                  <CustomSelect
                     value={formData.doctorId}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, doctorId: value }))}
-                  >
-                    <SelectTrigger className="text-right border-2 border-border hover:border-primary focus:border-primary transition-colors rounded-xl shadow-sm py-3">
-                      <SelectValue placeholder="اختر الطبيب" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {filteredDoctors.map((doctor) => (
-                        <SelectItem key={doctor._id} value={doctor._id} className="py-3">
-                          <div className="flex flex-col text-right">
-                            <span className="font-medium">{doctor.name}</span>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                              {doctor.specialty && (
-                                <Badge variant="outline" className="text-xs">
-                                  {doctor.specialty}
-                                </Badge>
-                              )}
-                              {doctor.organizationName && (
-                                <div className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  <span>{doctor.organizationName}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="اختر الطبيب"
+                    options={doctorOptions}
+                    searchPlaceholder="ابحث عن طبيب بالاسم أو التخصص..."
+                  />
                 </div>
 
                 {/* Next Button for Mobile */}
-                <div className="md:hidden flex justify-end">
+                <div className="sm:hidden flex justify-end pt-4">
                   <Button 
                     type="button" 
                     onClick={() => setActiveStep(1)}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-sm transition-all duration-200 hover:shadow-md px-6"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-sm transition-all duration-200 hover:shadow-md px-8 py-2"
                     disabled={!formData.visitDate || !formData.doctorId}
                   >
                     التالي
@@ -412,68 +491,43 @@ const CreateVisit: React.FC = () => {
                 </div>
               </div>
 
-              {/* Step 2: Products - Show on all screens but control visibility on mobile */}
-              <div className={`space-y-6 ${activeStep !== 1 ? 'hidden md:block' : ''}`}>
+              {/* Step 2: Products */}
+              <div className={`space-y-6 ${activeStep !== 1 ? 'hidden sm:block' : ''}`}>
                 {/* Products Section */}
                 <div className="space-y-4">
-                  <Label className="flex items-center gap-2 justify-end text-lg font-medium">
+                  <Label className="flex items-center gap-2 justify-end text-base sm:text-lg font-medium">
                     <span>المنتجات والرسائل *</span>
-                    <Package className="h-5 w-5 text-primary" />
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </Label>
                   
                   {/* Add Product */}
                   <Card className="p-4 border-2 border-border hover:border-primary/50 transition-colors rounded-xl shadow-sm bg-gradient-to-br from-white to-blue-50/50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="md:col-span-2 lg:col-span-1">
-                        <Label className="text-sm text-right block mb-2 font-medium">اختر المنتج</Label>
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            value={productSearch}
-                            onChange={(e) => setProductSearch(e.target.value)}
-                            placeholder="ابحث عن المنتج"
-                            className="mb-2 text-right pr-3 pl-10 border-2 border-border hover:border-primary focus:border-primary transition-colors rounded-xl"
-                          />
-                        </div>
-                        <Select value={selectedProduct} onValueChange={handleProductSelect}>
-                          <SelectTrigger className="text-right border-2 border-border hover:border-primary focus:border-primary transition-colors rounded-xl py-3">
-                            <SelectValue placeholder="اختر المنتج" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-60">
-                            {filteredProducts.map((product) => (
-                              <SelectItem key={product._id} value={product._id} className="text-right py-3">
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{product.name}</span>
-                                  <span className="text-xs text-muted-foreground">كود: {product.code}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-3">
+                        <Label className="text-sm text-right block font-medium">اختر المنتج</Label>
+                        <CustomSelect
+                          value={selectedProduct}
+                          onValueChange={handleProductSelect}
+                          placeholder="اختر المنتج"
+                          options={productOptions}
+                          searchPlaceholder="ابحث عن منتج بالاسم أو الكود..."
+                        />
                       </div>
                       
-                      <div>
-                        <Label className="text-sm text-right block mb-2 font-medium">اختر الرسالة</Label>
-                        <Select 
-                          value={selectedMessage} 
+                      <div className="space-y-3">
+                        <Label className="text-sm text-right block font-medium">اختر الرسالة</Label>
+                        <CustomSelect
+                          value={selectedMessage}
                           onValueChange={setSelectedMessage}
+                          placeholder="اختر الرسالة"
+                          options={messageOptions}
                           disabled={!selectedProduct}
-                        >
-                          <SelectTrigger className="text-right border-2 border-border hover:border-primary focus:border-primary transition-colors rounded-xl py-3">
-                            <SelectValue placeholder="اختر الرسالة" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-60">
-                            {getProductMessages(selectedProduct).map((message: any, index: number) => (
-                              <SelectItem key={index} value={index.toString()} className="text-right py-3">
-                                {message.text || message.tag}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          searchPlaceholder="ابحث في الرسائل..."
+                        />
                       </div>
                       
-                      <div>
-                        <Label className="text-sm text-right block mb-2 font-medium">عدد العينات</Label>
+                      <div className="space-y-3">
+                        <Label className="text-sm text-right block font-medium">عدد العينات</Label>
                         <Input
                           type="number"
                           min="0"
@@ -484,7 +538,7 @@ const CreateVisit: React.FC = () => {
                         />
                       </div>
                       
-                      <div className="flex items-end">
+                      <div className="flex items-end pt-2">
                         <Button 
                           type="button" 
                           onClick={addProductToVisit}
@@ -501,30 +555,31 @@ const CreateVisit: React.FC = () => {
                   {/* Selected Products */}
                   {formData.products.length > 0 && (
                     <div className="space-y-3">
-                      <Label className="text-lg font-medium text-right block">المنتجات المحددة:</Label>
+                      <Label className="text-base sm:text-lg font-medium text-right block">المنتجات المحددة:</Label>
                       <div className="space-y-3">
                         {formData.products.map((product, index) => (
-                          <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-blue-50/50 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 shadow-sm">
+                          <div key={index} className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-white to-blue-50/50 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 shadow-sm">
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               onClick={() => removeProduct(index)}
-                              className="hover:bg-destructive/10 hover:text-destructive rounded-lg"
+                              className="hover:bg-destructive/10 hover:text-destructive rounded-lg flex-shrink-0 ml-2"
                             >
                               <X className="h-4 w-4" />
                             </Button>
-                            <div className="flex-1 text-right mr-3">
-                              <div className="font-medium text-lg">{getProductName(product.productId)}</div>
-                              <div className="text-sm text-muted-foreground mt-1">
+                            <div className="flex-1 text-right">
+                              <div className="font-medium text-sm sm:text-base">{getProductName(product.productId)}</div>
+                              <div className="text-xs sm:text-sm text-muted-foreground mt-1">
+                                <MessageSquare className="h-3 w-3 inline ml-1" />
                                 الرسالة: {getMessageTitle(product.productId, product.messageId)}
                               </div>
-                              <div className="text-primary font-medium mt-1 flex items-center gap-1">
-                                <Package className="h-4 w-4" />
+                              <div className="text-primary font-medium mt-1 flex items-center gap-1 text-xs sm:text-sm">
+                                <Package className="h-3 w-3 sm:h-4 sm:w-4" />
                                 عدد العينات: {product.samplesCount}
                               </div>
                             </div>
-                            <Badge variant="secondary" className="ml-2">
+                            <Badge variant="secondary" className="flex-shrink-0 mr-2">
                               {index + 1}
                             </Badge>
                           </div>
@@ -535,19 +590,19 @@ const CreateVisit: React.FC = () => {
                 </div>
 
                 {/* Navigation for Mobile */}
-                <div className="md:hidden flex justify-between">
+                <div className="sm:hidden flex justify-between pt-4">
                   <Button 
                     type="button" 
                     variant="outline"
                     onClick={() => setActiveStep(0)}
-                    className="border-2 border-border hover:border-primary hover:bg-primary/5 transition-colors rounded-xl"
+                    className="border-2 border-border hover:border-primary hover:bg-primary/5 transition-colors rounded-xl py-2 px-6"
                   >
                     السابق
                   </Button>
                   <Button 
                     type="button" 
                     onClick={() => setActiveStep(2)}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-sm transition-all duration-200 hover:shadow-md px-6"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-sm transition-all duration-200 hover:shadow-md px-8 py-2"
                     disabled={formData.products.length === 0}
                   >
                     التالي
@@ -557,13 +612,13 @@ const CreateVisit: React.FC = () => {
 
               <Separator className="bg-border/50 my-2" />
 
-              {/* Step 3: Additional Details - Show on all screens but control visibility on mobile */}
-              <div className={`space-y-6 ${activeStep !== 2 ? 'hidden md:block' : ''}`}>
+              {/* Step 3: Additional Details */}
+              <div className={`space-y-6 ${activeStep !== 2 ? 'hidden sm:block' : ''}`}>
                 {/* Notes */}
                 <div className="space-y-3">
-                  <Label htmlFor="notes" className="flex items-center gap-2 justify-end text-lg font-medium">
+                  <Label htmlFor="notes" className="flex items-center gap-2 justify-end text-base sm:text-lg font-medium">
                     <span>ملاحظات</span>
-                    <FileText className="h-5 w-5 text-primary" />
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </Label>
                   <Textarea
                     id="notes"
@@ -577,10 +632,10 @@ const CreateVisit: React.FC = () => {
 
                 {/* Supervisor Section */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-end space-x-reverse space-x-2 p-4 bg-gradient-to-r from-white to-blue-50/50 rounded-xl border-2 border-border">
-                    <Label htmlFor="withSupervisor" className="flex items-center gap-2 text-lg font-medium cursor-pointer">
+                  <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-white to-blue-50/50 rounded-xl border-2 border-border">
+                    <Label htmlFor="withSupervisor" className="flex items-center gap-2 text-base sm:text-lg font-medium cursor-pointer flex-1">
+                      <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                       <span>هل كان بصحبة مشرف؟</span>
-                      <Users className="h-5 w-5 text-primary" />
                     </Label>
                     <Checkbox
                       id="withSupervisor"
@@ -597,12 +652,12 @@ const CreateVisit: React.FC = () => {
                 </div>
 
                 {/* Navigation for Mobile */}
-                <div className="md:hidden flex justify-between">
+                <div className="sm:hidden flex justify-between pt-4">
                   <Button 
                     type="button" 
                     variant="outline"
                     onClick={() => setActiveStep(1)}
-                    className="border-2 border-border hover:border-primary hover:bg-primary/5 transition-colors rounded-xl"
+                    className="border-2 border-border hover:border-primary hover:bg-primary/5 transition-colors rounded-xl py-2 px-6"
                   >
                     السابق
                   </Button>
@@ -612,11 +667,11 @@ const CreateVisit: React.FC = () => {
               <Separator className="bg-border/50 my-4" />
 
               {/* Submit Button */}
-              <div className="flex gap-4 flex-row-reverse">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
                   type="submit" 
                   disabled={loading} 
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-sm transition-all duration-200 hover:shadow-md py-3 text-lg font-medium"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-sm transition-all duration-200 hover:shadow-md py-3 text-base sm:text-lg font-medium order-2 sm:order-1"
                 >
                   {loading ? (
                     <>
@@ -632,7 +687,7 @@ const CreateVisit: React.FC = () => {
                   variant="outline" 
                   onClick={() => navigate(-1)}
                   disabled={loading}
-                  className="border-2 border-border hover:border-primary hover:bg-primary/5 transition-colors rounded-xl py-3"
+                  className="border-2 border-border hover:border-primary hover:bg-primary/5 transition-colors rounded-xl py-3 order-1 sm:order-2 sm:flex-1"
                 >
                   إلغاء
                 </Button>
