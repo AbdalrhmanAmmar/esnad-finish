@@ -71,6 +71,18 @@ const DoctorCard: React.FC = () => {
   const { doctor, visits, approvedProductRequests, approvedMarketingActivities, statistics } = doctorData.data;
   console.log(doctorData.data)
 
+  const formatVisitDateTime = (isoDate: string, fallbackTime?: string) => {
+    const d = new Date(isoDate);
+    const datePart = d.toLocaleDateString('ar-SA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      calendar: 'gregory'
+    });
+    const timePart = fallbackTime || d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${datePart} - ${timePart}`;
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -277,18 +289,8 @@ const DoctorCard: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-blue-600" />
                           <span className="font-semibold text-blue-800 dark:text-blue-200">
-                            {new Date(visit.visitDate).toLocaleDateString('ar-SA', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              calendar: 'gregory'
-                            })}
+                            {formatVisitDateTime(visit.visitDate, (visit as any).visitTime)}
                           </span>
-                          {visit.visitTime && (
-                            <span className="text-sm text-muted-foreground">
-                              - {visit.visitTime}
-                            </span>
-                          )}
                         </div>
                         <Badge variant={visit.visitStatus === 'completed' ? 'default' : 'secondary'}>
                           {visit.visitStatus === 'completed' ? 'مكتملة' : visit.visitStatus}
