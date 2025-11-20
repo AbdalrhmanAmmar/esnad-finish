@@ -103,9 +103,9 @@ const AnalyticsClincsSupervisor: React.FC = () => {
       }),
       visitDateISO: visit.visitDate,
       doctorName: visit.doctor.name,
-      specialty: 'غير محدد', // Default value since specialty is not in new structure
+      specialty: (visit.doctor as any).specialty || (visit.doctor as any).specialization || 'غير محدد',
       clinicName: visit.doctor.organizationName,
-      classification: 'غير محدد', // Default value since classification is not in new structure
+      classification: (visit.doctor as any).segment || 'غير محدد',
       brand: visit.products.length > 0 ? visit.products[0].brand : 'غير محدد',
       products: visit.products.map(p => p.productName),
       samplesCount: visit.products.reduce((sum, p) => sum + p.samplesCount, 0),
