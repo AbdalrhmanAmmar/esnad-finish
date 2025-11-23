@@ -7,19 +7,19 @@ interface ProtectedRouteProps {
   requiredRoles?: string[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requiredRoles = [] 
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requiredRoles = []
 }) => {
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
 
   if (!isAuthenticated || !user) {
     return (
-      <Navigate 
-        to="/login" 
-        state={{ from: location }} 
-        replace 
+      <Navigate
+        to="/login"
+        state={{ from: location }}
+        replace
       />
     );
   }

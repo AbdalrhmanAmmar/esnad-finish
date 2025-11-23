@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#38e079",
+              "background-light": "#f6f8f7",
+              "background-dark": "#122017",
+            },
+            fontFamily: {
+              display: ["Inter"],
+            },
+            borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+          },
+        },
+      };
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="flex-grow">
+<header class="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between sticky top-0 z-10 border-b border-background-dark/10 dark:border-background-light/10">
+<button class="text-background-dark dark:text-background-light flex size-10 shrink-0 items-center justify-center rounded-full">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="text-background-dark dark:text-background-light text-lg font-bold leading-tight flex-1 text-center">Visit Analytics</h1>
+<div class="w-10"></div>
+</header>
+<div class="p-4">
+<div class="pb-4">
+<div class="flex flex-wrap gap-2 pb-2">
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark px-4">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Start Date</p>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark px-4">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">End Date</p>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark px-4">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Physicians</p>
+<span class="material-symbols-outlined text-background-dark dark:text-background-light">arrow_drop_down</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark px-4">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Areas</p>
+<span class="material-symbols-outlined text-background-dark dark:text-background-light">arrow_drop_down</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark px-4">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Products</p>
+<span class="material-symbols-outlined text-background-dark dark:text-background-light">arrow_drop_down</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark px-4">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Product Category</p>
+<span class="material-symbols-outlined text-background-dark dark:text-background-light">arrow_drop_down</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark px-4">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Clinics</p>
+<span class="material-symbols-outlined text-background-dark dark:text-background-light">arrow_drop_down</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark px-4">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Physicians Classifications</p>
+<span class="material-symbols-outlined text-background-dark dark:text-background-light">arrow_drop_down</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-2 rounded-xl border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark p-3">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Visits by Day</p>
+<div class="grid min-h-[120px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
+<div class="bg-primary/20 w-full rounded-t" style="height: 40%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">M</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 60%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">T</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 50%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">W</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 60%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">T</p>
+<div class="bg-primary w-full rounded-t" style="height: 100%;"></div>
+<p class="text-background-dark dark:text-background-light text-xs font-bold">F</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 70%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">S</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 90%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">S</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark p-3">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Visits by Physician</p>
+<div class="grid min-h-[120px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
+<div class="bg-primary/20 w-full rounded-t" style="height: 20%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">Dr. S</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 40%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">Dr. J</p>
+<div class="bg-primary w-full rounded-t" style="height: 90%;"></div>
+<p class="text-background-dark dark:text-background-light text-xs font-bold">Dr. W</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 10%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">Dr. B</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark p-3">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Visits by Area</p>
+<div class="grid min-h-[120px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
+<div class="bg-primary/20 w-full rounded-t" style="height: 75%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">N</p>
+<div class="bg-primary w-full rounded-t" style="height: 100%;"></div>
+<p class="text-background-dark dark:text-background-light text-xs font-bold">S</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 50%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">E</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 60%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">W</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark p-3">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Visits by Product</p>
+<div class="grid min-h-[120px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
+<div class="bg-primary w-full rounded-t" style="height: 80%;"></div>
+<p class="text-background-dark dark:text-background-light text-xs font-bold">A</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 60%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">B</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 90%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">C</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 40%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">D</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark p-3">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Visits by Clinic</p>
+<div class="grid min-h-[120px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
+<div class="bg-primary w-full rounded-t" style="height: 100%;"></div>
+<p class="text-background-dark dark:text-background-light text-xs font-bold">C1</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 70%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">C2</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 50%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">C3</p>
+<div class="bg-primary/20 w-full rounded-t" style="height: 80%;"></div>
+<p class="text-background-dark/60 dark:text-background-light/60 text-xs font-medium">C4</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl border border-background-dark/10 dark:border-background-light/10 bg-background-light dark:bg-background-dark p-3">
+<p class="text-background-dark dark:text-background-light text-sm font-medium">Physicians Classifications</p>
+<div class="min-h-[120px] flex items-center justify-center">
+<div class="relative w-28 h-28">
+<svg class="w-full h-full" viewBox="0 0 36 36">
+<circle class="stroke-primary/20" cx="18" cy="18" fill="none" r="15.91549430918954" stroke-width="4"></circle>
+<circle class="stroke-primary" cx="18" cy="18" fill="none" r="15.91549430918954" stroke-dasharray="60, 100" stroke-dashoffset="25" stroke-width="4"></circle>
+<circle class="stroke-green-400" cx="18" cy="18" fill="none" r="15.91549430918954" stroke-dasharray="25, 100" stroke-dashoffset="-35" stroke-width="4"></circle>
+<circle class="stroke-green-300" cx="18" cy="18" fill="none" r="15.91549430918954" stroke-dasharray="15, 100" stroke-dashoffset="-60" stroke-width="4"></circle>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="sticky bottom-0 z-10">
+<div class="flex justify-around border-t border-background-dark/10 dark:border-background-light/10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm px-2 pt-2 pb-4">
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-primary" href="#">
+<div class="flex h-8 w-16 items-center justify-center bg-primary/20 rounded-full">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48.11-.11a16,16,0,0,1,21.53,0,1.14,1.14,0,0,0,.11.11l80,75.48A16,16,0,0,1,224,115.55Z"></path>
+</svg>
+</div>
+<p class="text-xs font-medium">Home</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-background-dark/60 dark:text-background-light/60" href="#">
+<div class="flex h-8 items-center justify-center">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"></path>
+</svg>
+</div>
+<p class="text-xs font-medium">Visits</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-background-dark/60 dark:text-background-light/60" href="#">
+<div class="flex h-8 items-center justify-center">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M223.68,66.15,135.68,18a15.88,15.88,0,0,0-15.36,0l-88,48.17a16,16,0,0,0-8.32,14v95.64a16,16,0,0,0,8.32,14l88,48.17a15.88,15.88,0,0,0,15.36,0l88-48.17a16,16,0,0,0,8.32-14V80.18A16,16,0,0,0,223.68,66.15ZM128,32l80.34,44L47.66,76,128,32ZM40,90l80,43.78v85.79L40,175.82Zm176,85.78-80,43.79V133.82l80-43.77Z"></path>
+</svg>
+</div>
+<p class="text-xs font-medium">Products</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-background-dark/60 dark:text-background-light/60" href="#">
+<div class="flex h-8 items-center justify-center">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"></path>
+</svg>
+</div>
+<p class="text-xs font-medium">Physicians</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-background-dark/60 dark:text-background-light/60" href="#">
+<div class="flex h-8 items-center justify-center">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06ZM216,128a87.77,87.77,0,0,1-14.87,48.29l-22-2.45a8,8,0,0,0-6,4,74.5,74.5,0,0,1-7.79,8.54l-11.1,15.54a88,88,0,0,1-48.48,14.08,87.8,87.8,0,0,1-48.29-14.87l-15.54-11.1a74.5,74.5,0,0,1-8.54-7.79,8,8,0,0,0-4-6l-2.45-22A87.77,87.77,0,0,1,40,128a88,88,0,0,1,14.08-48.48l15.54,11.1a74.5,74.5,0,0,1,8.54,7.79,8,8,0,0,0,4,6l2.45,22A87.77,87.77,0,0,1,128,88a88,88,0,0,1,88,40Z"></path>
+</svg>
+</div>
+<p class="text-xs font-medium">Settings</p>
+</a>
+</div>
+</footer>
+</div>
+
+</body></html>

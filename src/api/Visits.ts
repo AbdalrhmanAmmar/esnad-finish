@@ -357,3 +357,53 @@ export const getVisitsBySupervisor = async (supervisorId: string, params?: GetVi
   const response = await api.get(`/visit-forms/supervisor/${supervisorId}/visits?${queryParams.toString()}`);
   return response.data;
 };
+
+// Visit Analytics Interfaces
+export interface VisitAnalyticsData {
+  visitsByDay: Array<{ day: string; label: string; visits: number; percentage: number }>;
+  visitsByDoctor: Array<{ name: string; label: string; visits: number; specialty: string; percentage: number }>;
+  visitsByArea: Array<{ name: string; label: string; visits: number; percentage: number }>;
+  visitsByProduct: Array<{ name: string; label: string; visits: number; category: string; percentage: number }>;
+  visitsByClinic: Array<{ name: string; label: string; visits: number; area: string; percentage: number }>;
+  visitsByTime: Array<{ time: string; label: string; visits: number; percentage: number }>;
+  doctorClassifications: Array<{ category: string; count: number; percentage: number; color: string }>;
+  recentVisits: Array<{
+    id: number;
+    doctor: string;
+    clinic: string;
+    date: string;
+    time: string;
+    product: string;
+    status: string;
+  }>;
+}
+
+// Get visit analytics for medical rep
+export const getVisitAnalytics = async (medicalRepId: string, params?: {
+  startDate?: string;
+  endDate?: string;
+  area?: string;
+  doctor?: string;
+  product?: string;
+  clinic?: string;
+}): Promise<ApiResponse<VisitAnalyticsData>> => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.area) queryParams.append('area', params.area);
+    if (params?.doctor) queryParams.append('doctor', params.doctor);
+    if (params?.product) queryParams.append('product', params.product);
+    if (params?.clinic) queryParams.append('clinic', params.clinic);
+
+    const queryString = queryParams.toString();
+    const url = `/visit-forms/medical-rep/${medicalRepId}/analytics${queryString ? `?${queryString}` : ''}`;
+
+    const response = await api.get(url);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching visit analytics:', error);
+    throw new Error(error.response?.data?.message || 'فشل في جلب تحليلات الزيارات');
+  }
+};

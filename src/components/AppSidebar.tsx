@@ -60,8 +60,8 @@ import {
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
-  // { id: "home", title: "الصفحة الرئيسية", url: "/", icon: Home, color: "text-blue-500" },
-  // { id: "Ai", title: "اعدادات الذكاء الصناعي", url: "/Ai", icon: Moon, color: "text-gray-500" },
+  { id: "home", title: "الصفحة الرئيسية", url: "/", icon: Home, color: "text-blue-500" },
+  { id: "Ai", title: "اعدادات الذكاء الصناعي", url: "/Ai", icon: Moon, color: "text-gray-500" },
   // { 
   //   id: "dashboards", 
   //   title: "لوحات التحكم", 
@@ -91,18 +91,18 @@ const menuItems = [
   //   icon: Pill,
   //   color: "text-pink-500"
   // },
-  // { 
-  //   id: "visits", 
-  //   title: "الزيارات", 
-  //   icon: Users, 
-  //   color: "text-purple-500",
-  //   subItems: [
-  //     { id: "clinic-visit", title: "تسجيل زيارة عيادة", url: "/visits/clinic", icon: Stethoscope },
-  //     { id: "pharmacy-visit", title: "تسجيل زيارة صيدلية", url: "/visits/pharmacy", icon: Pill }
-  //   ]
-  // },
-  // { id: "clients", title: "قائمة العملاء", url: "/clients", icon: Users, color: "text-cyan-500" },
-  // { id: "sales-clients", title: "عملاء المبيعات", url: "/sales-clients", icon: UserCheck, color: "text-blue-600", requiredRoles: ["SALES REP"] },
+  {
+    id: "visits",
+    title: "الزيارات",
+    icon: Users,
+    color: "text-purple-500",
+    subItems: [
+      { id: "clinic-visit", title: "تسجيل زيارة عيادة", url: "/visits/clinic", icon: Stethoscope },
+      { id: "pharmacy-visit", title: "تسجيل زيارة صيدلية", url: "/visits/pharmacy", icon: Pill }
+    ]
+  },
+  { id: "clients", title: "قائمة العملاء", url: "/clients", icon: Users, color: "text-cyan-500" },
+  { id: "sales-clients", title: "عملاء المبيعات", url: "/sales-clients", icon: UserCheck, color: "text-blue-600" },
   // { 
   //   id: "orders", 
   //   title: "الطلبات", 
@@ -148,38 +148,37 @@ const menuItems = [
 ];
 
 const managementItems = [
-  // { 
-  //   id: "management", 
-  //   title: "الإدارة العامة", 
-  //   icon: Settings, 
-  //   color: "text-gray-500",
-  //   requiredRoles: ["ADMIN"],
-  //   subItems: [
-  //     { id: "work-days", title: "إدارة أيام العمل", url: "/work-day-calender", icon: Calendar },
-  //     { id: "documents", title: "رفع المنتجات", url: "/management/documents", icon: FolderOpen },
-  //     { id: "product-messages", title: "رفع رسائل المنتجات", url: "/management/product-messages", icon: MessageSquare },
-  //     { id: "doctors-upload", title: "رفع ملفات الأطباء", url: "/management/doctors-upload", icon: Stethoscope },
-  //     { id: "pharmacies-upload", title: "رفع ملفات الصيدليات", url: "/management/pharmacies-upload", icon: Pill },
-  //     { id: "users-upload", title: "رفع ملفات المستخدمين", url: "/management/users-upload", icon: Users },
-  //     { id: "marketing-activities-upload", title: "رفع الأنشطة التسويقية", url: "/management/marketing-activities-upload", icon: Activity, requiredRoles: ["ADMIN", "SYSTEM_ADMIN"] },
-  //     { id: "lost-orders", title: "إدارة الطلبيات المفقودة", url: "/management/lost-orders", icon: Package },
-  //     { id: "site-analytics", title: "إحصائيات الموقع", url: "/management/site-analytics", icon: TrendingUp, requiredRoles: ["SYSTEM_ADMIN"] },
-  //     {
-  //       id: "data-management",
-  //       title: "إدارة البيانات",
-  //       icon: Database,
-  //       subItems: [
-  //         { id: "products-management", title: "إدارة المنتجات", url: "/management/data/products", icon: ShoppingBag },
-  //         { id: "doctors-management", title: "إدارة الأطباء", url: "/management/data/doctors", icon: UserMinus },
-  //         { id: "pharmacies-management", title: "إدارة الصيدليات", url: "/management/data/pharmacies", icon: Pill },
-  //         { id: "employees-management", title: "إدارة الموظفين", url: "/management/employees", icon: Users, requiredRoles: ["ADMIN"] },
-  //         { id: "marketing-activities-management", title: "إدارة الأنشطة التسويقية", url: "/management/marketing-activities", icon: Activity, requiredRoles: ["ADMIN", "SYSTEM_ADMIN"] }
-  //       ]
-  //     }
-  //   ]
-  // },
-  // { id: "profile", title: "الملف الشخصي", url: "/profile", icon: User, color: "text-blue-500" },
-  // { id: "my-data", title: "قائمة بياناتي", url: "/my-data", icon: ClipboardList, color: "text-green-500", requiredRoles: ["MEDICAL REP", "medical rep"] },
+  {
+    id: "management",
+    title: "الإدارة العامة",
+    icon: Settings,
+    color: "text-gray-500",
+    subItems: [
+      { id: "work-days", title: "إدارة أيام العمل", url: "/work-day-calender", icon: Calendar },
+      { id: "documents", title: "رفع المنتجات", url: "/management/documents", icon: FolderOpen },
+      { id: "product-messages", title: "رفع رسائل المنتجات", url: "/management/product-messages", icon: MessageSquare },
+      { id: "doctors-upload", title: "رفع ملفات الأطباء", url: "/management/doctors-upload", icon: Stethoscope },
+      { id: "pharmacies-upload", title: "رفع ملفات الصيدليات", url: "/management/pharmacies-upload", icon: Pill },
+      { id: "users-upload", title: "رفع ملفات المستخدمين", url: "/management/users-upload", icon: Users },
+      { id: "marketing-activities-upload", title: "رفع الأنشطة التسويقية", url: "/management/marketing-activities-upload", icon: Activity },
+      { id: "lost-orders", title: "إدارة الطلبيات المفقودة", url: "/management/lost-orders", icon: Package },
+      { id: "site-analytics", title: "إحصائيات الموقع", url: "/management/site-analytics", icon: TrendingUp },
+      {
+        id: "data-management",
+        title: "إدارة البيانات",
+        icon: Database,
+        subItems: [
+          { id: "products-management", title: "إدارة المنتجات", url: "/management/data/products", icon: ShoppingBag },
+          { id: "doctors-management", title: "إدارة الأطباء", url: "/management/data/doctors", icon: UserMinus },
+          { id: "pharmacies-management", title: "إدارة الصيدليات", url: "/management/data/pharmacies", icon: Pill },
+          { id: "employees-management", title: "إدارة الموظفين", url: "/management/employees", icon: Users },
+          { id: "marketing-activities-management", title: "إدارة الأنشطة التسويقية", url: "/management/marketing-activities", icon: Activity }
+        ]
+      }
+    ]
+  },
+  { id: "profile", title: "الملف الشخصي", url: "/profile", icon: User, color: "text-blue-500" },
+  { id: "my-data", title: "قائمة بياناتي", url: "/my-data", icon: ClipboardList, color: "text-green-500" },
   // { 
   //   id: "users", 
   //   title: "إدارة المستخدمين", 
@@ -323,9 +322,9 @@ export function AppSidebar() {
       return [
                           { id: "create-visit", title: "تسجيل زيارة عادية", url: "/create-visit", icon: CalendarPlus, requiredRoles: ["MEDICAL REP", "medical rep"] },
 
-        
-       
-            { id: "clinic-analytics", title: "لوحه تحكم العيادات", url: "/analytics/clinics", icon: Building2 },
+
+
+            { id: "visit-analytics", title: "تحليلات الزيارات", url: "/", icon: BarChart3 },
             { id: "medical-sales", title: "لوحه تحكم المبيعات", url: "/analytics/medical-sales", icon: DollarSignIcon },
           
         
@@ -551,8 +550,15 @@ export function AppSidebar() {
 
       <SidebarContent className="px-3 py-4">
         <SidebarGroup>
+          {!user && (
+            <div className="text-center py-8 px-4">
+              <p className="text-sm text-muted-foreground">
+                يرجى تسجيل الدخول لعرض القائمة
+              </p>
+            </div>
+          )}
           <SidebarMenu className="space-y-2">
-            {getFilteredMenuItems().map((item) => {
+            {user && getFilteredMenuItems().map((item) => {
               const hasSubItems = item.subItems && item.subItems.length > 0;
               const isExpanded = expandedItems.includes(item.id);
               const active = item.url ? isActive(item.url) : false;
@@ -780,7 +786,7 @@ export function AppSidebar() {
             {!isCollapsed && user?.role === "ADMIN" && "الإدارة"}
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-2">
-            {getFilteredManagementItems().map((item) => {
+            {user && getFilteredManagementItems().map((item) => {
               const hasSubItems = item.subItems && item.subItems.length > 0;
               const isExpanded = expandedItems.includes(item.id);
               const active = item.url ? isActive(item.url) : false;
