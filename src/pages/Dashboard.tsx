@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { ar } from 'date-fns/locale';
+
+// Register Arabic locale
+registerLocale('ar', ar);
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/stores/authStore';
 import { getDetailedVisits, DetailedVisitsResponse } from '@/api/Visits';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Eye, CalendarDays } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   DropdownMenu,
@@ -73,21 +81,24 @@ const mockDoctorClassifications = [
 ];
 
 const mockRecentVisits = [
-  { id: 1, doctor: 'د. أحمد محمد', clinic: 'عيادة النور', date: '2024-01-15', time: '10:30', product: 'منتج A', status: 'مكتملة' },
-  { id: 2, doctor: 'د. فاطمة علي', clinic: 'عيادة الشفاء', date: '2024-01-15', time: '11:00', product: 'منتج B', status: 'مكتملة' },
-  { id: 3, doctor: 'د. محمود حسن', clinic: 'عيادة الأمل', date: '2024-01-15', time: '14:30', product: 'منتج C', status: 'قيد الانتظار' },
-  { id: 4, doctor: 'د. سارة خالد', clinic: 'عيادة السلام', date: '2024-01-14', time: '09:00', product: 'منتج A', status: 'مكتملة' },
-  { id: 5, doctor: 'د. أحمد محمد', clinic: 'عيادة النور', date: '2024-01-14', time: '15:30', product: 'منتج D', status: 'مكتملة' },
-  { id: 6, doctor: 'د. فاطمة علي', clinic: 'عيادة الشفاء', date: '2024-01-13', time: '13:00', product: 'منتج C', status: 'مكتملة' },
-  { id: 7, doctor: 'د. محمود حسن', clinic: 'عيادة الأمل', date: '2024-01-13', time: '16:00', product: 'منتج B', status: 'قيد الانتظار' },
-  { id: 8, doctor: 'د. سارة خالد', clinic: 'عيادة السلام', date: '2024-01-12', time: '11:30', product: 'منتج A', status: 'مكتملة' }
+  { id: 1, doctor: 'د. أحمد محمد', doctorId: '1', clinic: 'عيادة النور', date: '2024-01-15', time: '10:30', product: 'منتج A', status: 'مكتملة' },
+  { id: 2, doctor: 'د. فاطمة علي', doctorId: '2', clinic: 'عيادة الشفاء', date: '2024-01-15', time: '11:00', product: 'منتج B', status: 'مكتملة' },
+  { id: 3, doctor: 'د. محمود حسن', doctorId: '3', clinic: 'عيادة الأمل', date: '2024-01-15', time: '14:30', product: 'منتج C', status: 'قيد الانتظار' },
+  { id: 4, doctor: 'د. سارة خالد', doctorId: '4', clinic: 'عيادة السلام', date: '2024-01-14', time: '09:00', product: 'منتج A', status: 'مكتملة' },
+  { id: 5, doctor: 'د. أحمد محمد', doctorId: '1', clinic: 'عيادة النور', date: '2024-01-14', time: '15:30', product: 'منتج D', status: 'مكتملة' },
+  { id: 6, doctor: 'د. فاطمة علي', doctorId: '2', clinic: 'عيادة الشفاء', date: '2024-01-13', time: '13:00', product: 'منتج C', status: 'مكتملة' },
+  { id: 7, doctor: 'د. محمود حسن', doctorId: '3', clinic: 'عيادة الأمل', date: '2024-01-13', time: '16:00', product: 'منتج B', status: 'قيد الانتظار' },
+  { id: 8, doctor: 'د. سارة خالد', doctorId: '4', clinic: 'عيادة السلام', date: '2024-01-12', time: '11:30', product: 'منتج A', status: 'مكتملة' }
 ];
 
 const Dashboard: React.FC = () => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [visitsData, setVisitsData] = useState<DetailedVisitsResponse | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -109,10 +120,18 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching visits for user:', user._id, 'with filters:', filters);
       const response = await getDetailedVisits(user._id, filters);
+      console.log('API Response:', response);
 
       if (response.success && response.data) {
+        console.log('Visits data received:', response.data.visits?.length || 0, 'visits');
         setVisitsData(response.data);
+
+        // Show info toast if no visits found
+        if (!response.data.visits || response.data.visits.length === 0) {
+          toast.error('لا توجد زيارات متاحة');
+        }
       } else {
         setError(response.message || 'فشل في جلب البيانات');
         toast.error(response.message || 'فشل في جلب البيانات');
@@ -289,6 +308,7 @@ const Dashboard: React.FC = () => {
     const processedRecentVisits = visits.slice(0, 8).map((visit, idx) => ({
       id: idx + 1,
       doctor: visit.doctorId.drName,
+      doctorId: visit.doctorId._id,
       clinic: visit.doctorId.organizationName,
       date: new Date(visit.visitDate).toLocaleDateString('ar-SA'),
       time: new Date(visit.createdAt).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
@@ -359,40 +379,53 @@ const Dashboard: React.FC = () => {
       <div className="p-4 md:px-6 pb-24 md:pb-6 space-y-4 md:space-y-6">
         {/* Filters */}
         <div className="pb-4">
-          <div className="flex flex-wrap gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">تاريخ البداية</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <Input
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                  className="border-0"
-                />
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex flex-wrap items-end gap-2">
+            {/* Start Date */}
+            <div className="relative min-w-[180px]">
+              <DatePicker
+                selected={startDate}
+                onChange={(date: Date | null) => {
+                  setStartDate(date);
+                  handleFilterChange('startDate', date ? date.toISOString().split('T')[0] : '');
+                  if (date) {
+                    setTimeout(() => handleApplyFilters(), 100);
+                  }
+                }}
+                dateFormat="yyyy-MM-dd"
+                placeholderText="تاريخ البداية"
+                className="w-full h-10 text-right pr-10 pl-4 text-sm bg-background border-2 border-[#38e079]/20 hover:border-[#38e079] focus:border-[#38e079] transition-all duration-200 rounded-full shadow-sm focus:shadow-md focus:ring-2 focus:ring-[#38e079]/20 outline-none"
+                calendarClassName="custom-datepicker-green"
+                popperClassName="z-[9999]"
+                showPopperArrow={false}
+                locale="ar"
+                wrapperClassName="w-full"
+              />
+              <CalendarDays className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#38e079] pointer-events-none" />
+            </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">تاريخ النهاية</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <Input
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                  className="border-0"
-                />
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* End Date */}
+            <div className="relative min-w-[180px]">
+              <DatePicker
+                selected={endDate}
+                onChange={(date: Date | null) => {
+                  setEndDate(date);
+                  handleFilterChange('endDate', date ? date.toISOString().split('T')[0] : '');
+                  if (date) {
+                    setTimeout(() => handleApplyFilters(), 100);
+                  }
+                }}
+                dateFormat="yyyy-MM-dd"
+                placeholderText="تاريخ النهاية"
+                className="w-full h-10 text-right pr-10 pl-4 text-sm bg-background border-2 border-[#38e079]/20 hover:border-[#38e079] focus:border-[#38e079] transition-all duration-200 rounded-full shadow-sm focus:shadow-md focus:ring-2 focus:ring-[#38e079]/20 outline-none"
+                calendarClassName="custom-datepicker-green"
+                popperClassName="z-[9999]"
+                showPopperArrow={false}
+                locale="ar"
+                minDate={startDate || undefined}
+                wrapperClassName="w-full"
+              />
+              <CalendarDays className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#38e079] pointer-events-none" />
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -591,9 +624,14 @@ const Dashboard: React.FC = () => {
                   return (
                     <React.Fragment key={i}>
                       <div
-                        className={`w-full rounded-t ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'}`}
+                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
                         style={{ height: `${day.percentage}%` }}
-                      ></div>
+                        title={`${day.day}: ${day.visits} زيارة`}
+                      >
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
+                          {day.day}: {day.visits}
+                        </div>
+                      </div>
                       <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
                         {day.label}
                       </p>
@@ -615,9 +653,14 @@ const Dashboard: React.FC = () => {
                   return (
                     <React.Fragment key={i}>
                       <div
-                        className={`w-full rounded-t ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'}`}
+                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
                         style={{ height: `${doctor.percentage}%` }}
-                      ></div>
+                        title={`${doctor.name}: ${doctor.visits} زيارة`}
+                      >
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
+                          {doctor.name}: {doctor.visits}
+                        </div>
+                      </div>
                       <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
                         {doctor.label}
                       </p>
@@ -639,9 +682,14 @@ const Dashboard: React.FC = () => {
                   return (
                     <React.Fragment key={i}>
                       <div
-                        className={`w-full rounded-t ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'}`}
+                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
                         style={{ height: `${area.percentage}%` }}
-                      ></div>
+                        title={`${area.name}: ${area.visits} زيارة`}
+                      >
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
+                          {area.name}: {area.visits}
+                        </div>
+                      </div>
                       <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
                         {area.label}
                       </p>
@@ -663,9 +711,14 @@ const Dashboard: React.FC = () => {
                   return (
                     <React.Fragment key={i}>
                       <div
-                        className={`w-full rounded-t ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'}`}
+                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
                         style={{ height: `${product.percentage}%` }}
-                      ></div>
+                        title={`${product.name}: ${product.visits} زيارة`}
+                      >
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
+                          {product.name}: {product.visits}
+                        </div>
+                      </div>
                       <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
                         {product.label}
                       </p>
@@ -687,9 +740,14 @@ const Dashboard: React.FC = () => {
                   return (
                     <React.Fragment key={i}>
                       <div
-                        className={`w-full rounded-t ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'}`}
+                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
                         style={{ height: `${clinic.percentage}%` }}
-                      ></div>
+                        title={`${clinic.name}: ${clinic.visits} زيارة`}
+                      >
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
+                          {clinic.name}: {clinic.visits}
+                        </div>
+                      </div>
                       <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
                         {clinic.label}
                       </p>
@@ -711,9 +769,14 @@ const Dashboard: React.FC = () => {
                   return (
                     <React.Fragment key={i}>
                       <div
-                        className={`w-full rounded-t ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'}`}
+                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
                         style={{ height: `${time.percentage}%` }}
-                      ></div>
+                        title={`${time.time}: ${time.visits} زيارة`}
+                      >
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
+                          {time.time}: {time.visits}
+                        </div>
+                      </div>
                       <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
                         {time.label}
                       </p>
@@ -744,6 +807,7 @@ const Dashboard: React.FC = () => {
                       return (
                         <circle
                           key={idx}
+                          className="cursor-pointer transition-all hover:opacity-80"
                           style={{ stroke: classification.color }}
                           cx="18"
                           cy="18"
@@ -752,7 +816,9 @@ const Dashboard: React.FC = () => {
                           strokeDasharray={`${classification.percentage}, 100`}
                           strokeDashoffset={`-${offset}`}
                           strokeWidth="4"
-                        />
+                        >
+                          <title>فئة {classification.category}: {classification.count} ({classification.percentage}%)</title>
+                        </circle>
                       );
                     })}
                   </svg>
@@ -762,6 +828,14 @@ const Dashboard: React.FC = () => {
                     </span>
                   </div>
                 </div>
+              </div>
+              <div className="flex justify-center gap-3 flex-wrap mt-2">
+                {doctorClassifications.map((classification, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: classification.color }}></div>
+                    <span className="text-xs">فئة {classification.category}: {classification.count}</span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -823,6 +897,7 @@ const Dashboard: React.FC = () => {
                     <th className="text-right py-3 px-4 font-semibold">الوقت</th>
                     <th className="text-right py-3 px-4 font-semibold">المنتج</th>
                     <th className="text-right py-3 px-4 font-semibold">الحالة</th>
+                    <th className="text-right py-3 px-4 font-semibold">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -842,6 +917,17 @@ const Dashboard: React.FC = () => {
                         }`}>
                           {visit.status}
                         </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/doctor-card/${visit.doctorId}`)}
+                          className="h-8 gap-2 hover:bg-[#38e079]/10 hover:text-[#38e079]"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="text-xs">عرض الطبيب</span>
+                        </Button>
                       </td>
                     </tr>
                   ))}
