@@ -168,7 +168,8 @@ const Dashboard: React.FC = () => {
         visitsByClinic: mockVisitsByClinic,
         visitsByTime: mockVisitsByTime,
         doctorClassifications: mockDoctorClassifications,
-        recentVisits: mockRecentVisits
+        recentVisits: mockRecentVisits,
+        visitsBySpecialty: []
       };
     }
 
@@ -211,6 +212,18 @@ const Dashboard: React.FC = () => {
       visits: data.visits,
       specialty: data.specialty,
       percentage: (data.visits / maxDoctorVisits) * 100
+    }));
+
+    // Process visits by specialty
+    const specialtyMap: Record<string, number> = {};
+    visits.forEach(visit => {
+      const specialty = visit.doctorId.specialty;
+      specialtyMap[specialty] = (specialtyMap[specialty] || 0) + 1;
+    });
+
+    const processedSpecialtyData = Object.entries(specialtyMap).map(([name, count]) => ({
+      name,
+      visits: count
     }));
 
     // Process visits by area
@@ -324,7 +337,8 @@ const Dashboard: React.FC = () => {
       visitsByClinic: processedClinicData.length > 0 ? processedClinicData : mockVisitsByClinic,
       visitsByTime: processedTimeData,
       doctorClassifications: processedClassifications.length > 0 ? processedClassifications : mockDoctorClassifications,
-      recentVisits: processedRecentVisits.length > 0 ? processedRecentVisits : mockRecentVisits
+      recentVisits: processedRecentVisits.length > 0 ? processedRecentVisits : mockRecentVisits,
+      visitsBySpecialty: processedSpecialtyData
     };
   };
 
@@ -335,6 +349,7 @@ const Dashboard: React.FC = () => {
   const visitsByProduct = analytics.visitsByProduct;
   const visitsByClinic = analytics.visitsByClinic;
   const visitsByTime = analytics.visitsByTime;
+  const visitsBySpecialty = analytics.visitsBySpecialty || [];
   const doctorClassifications = analytics.doctorClassifications;
   const recentVisits = analytics.recentVisits;
 
@@ -426,6 +441,40 @@ const Dashboard: React.FC = () => {
               />
               <CalendarDays className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#38e079] pointer-events-none" />
             </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
+                  <span className="text-sm font-medium">جميع التخصصات</span>
+                  <span className="mr-2">▼</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="p-2 space-y-1">
+                  <div
+                    className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
+                    onClick={() => {
+                      handleFilterChange('specialization', '');
+                      handleApplyFilters();
+                    }}
+                  >
+                    الكل
+                  </div>
+                  {visitsBySpecialty.map((specialty, i) => (
+                    <div
+                      key={i}
+                      className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
+                      onClick={() => {
+                        handleFilterChange('specialization', specialty.name);
+                        handleApplyFilters();
+                      }}
+                    >
+                      {specialty.name}
+                    </div>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
