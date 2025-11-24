@@ -103,12 +103,18 @@ const Dashboard: React.FC = () => {
     startDate: '',
     endDate: '',
     doctorName: '',
-    specialization: '',
+    specialty: '', // Changed from 'specialization' to 'specialty'
     segment: '',
     clinic: '',
     brand: '',
     products: ''
   });
+
+  const [availableSpecialties, setAvailableSpecialties] = useState<string[]>([]);
+  const [availableDoctors, setAvailableDoctors] = useState<string[]>([]);
+  const [availableAreas, setAvailableAreas] = useState<string[]>([]);
+  const [availableProducts, setAvailableProducts] = useState<string[]>([]);
+  const [availableClinics, setAvailableClinics] = useState<string[]>([]);
 
   const fetchAnalytics = async () => {
     if (!user?._id) {
@@ -127,6 +133,29 @@ const Dashboard: React.FC = () => {
       if (response.success && response.data) {
         console.log('Visits data received:', response.data.visits?.length || 0, 'visits');
         setVisitsData(response.data);
+
+        // Extract available options for filters from the response data
+        if (response.data.visits && response.data.visits.length > 0) {
+          const specialties = [...new Set(response.data.visits.map(visit => visit.doctorId.specialty))].filter(Boolean);
+          const doctors = [...new Set(response.data.visits.map(visit => visit.doctorId.drName))].filter(Boolean);
+          const areas = [...new Set(response.data.visits.map(visit => visit.doctorId.area || visit.doctorId.city))].filter(Boolean);
+          const clinics = [...new Set(response.data.visits.map(visit => visit.doctorId.organizationName))].filter(Boolean);
+          
+          const products: string[] = [];
+          response.data.visits.forEach(visit => {
+            visit.products.forEach(product => {
+              if (product.productId.PRODUCT && !products.includes(product.productId.PRODUCT)) {
+                products.push(product.productId.PRODUCT);
+              }
+            });
+          });
+
+          setAvailableSpecialties(specialties);
+          setAvailableDoctors(doctors);
+          setAvailableAreas(areas);
+          setAvailableClinics(clinics);
+          setAvailableProducts(products);
+        }
 
         // Show info toast if no visits found
         if (!response.data.visits || response.data.visits.length === 0) {
@@ -150,11 +179,27 @@ const Dashboard: React.FC = () => {
   }, [user?._id]);
 
   const handleFilterChange = (key: string, value: string | undefined) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters(prev => ({ ...prev, [key]: value || '' }));
   };
 
   const handleApplyFilters = () => {
     fetchAnalytics();
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      startDate: '',
+      endDate: '',
+      doctorName: '',
+      specialty: '',
+      segment: '',
+      clinic: '',
+      brand: '',
+      products: ''
+    });
+    setStartDate(null);
+    setEndDate(null);
+    // Don't fetch immediately, let user click apply or it will auto-fetch on next render
   };
 
   // Process visits data to calculate analytics
@@ -206,13 +251,16 @@ const Dashboard: React.FC = () => {
     });
 
     const maxDoctorVisits = Math.max(...Object.values(doctorMap).map(d => d.visits), 1);
-    const processedDoctorData = Object.entries(doctorMap).slice(0, 4).map(([name, data]) => ({
-      name,
-      label: name.split(' ').slice(1, 3).map(n => n[0]).join(''),
-      visits: data.visits,
-      specialty: data.specialty,
-      percentage: (data.visits / maxDoctorVisits) * 100
-    }));
+    const processedDoctorData = Object.entries(doctorMap)
+      .sort((a, b) => b[1].visits - a[1].visits)
+      .slice(0, 4)
+      .map(([name, data]) => ({
+        name,
+        label: name.split(' ').slice(1, 3).map(n => n[0]).join(''),
+        visits: data.visits,
+        specialty: data.specialty,
+        percentage: (data.visits / maxDoctorVisits) * 100
+      }));
 
     // Process visits by specialty
     const specialtyMap: Record<string, number> = {};
@@ -234,12 +282,15 @@ const Dashboard: React.FC = () => {
     });
 
     const maxAreaVisits = Math.max(...Object.values(areaMap), 1);
-    const processedAreaData = Object.entries(areaMap).slice(0, 4).map(([name, count]) => ({
-      name,
-      label: name.charAt(0),
-      visits: count,
-      percentage: (count / maxAreaVisits) * 100
-    }));
+    const processedAreaData = Object.entries(areaMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([name, count]) => ({
+        name,
+        label: name.charAt(0),
+        visits: count,
+        percentage: (count / maxAreaVisits) * 100
+      }));
 
     // Process visits by product
     const productMap: Record<string, { visits: number; category: string }> = {};
@@ -254,13 +305,16 @@ const Dashboard: React.FC = () => {
     });
 
     const maxProductVisits = Math.max(...Object.values(productMap).map(p => p.visits), 1);
-    const processedProductData = Object.entries(productMap).slice(0, 4).map(([name, data]) => ({
-      name,
-      label: name.substring(0, 2),
-      visits: data.visits,
-      category: data.category,
-      percentage: (data.visits / maxProductVisits) * 100
-    }));
+    const processedProductData = Object.entries(productMap)
+      .sort((a, b) => b[1].visits - a[1].visits)
+      .slice(0, 4)
+      .map(([name, data]) => ({
+        name,
+        label: name.substring(0, 2),
+        visits: data.visits,
+        category: data.category,
+        percentage: (data.visits / maxProductVisits) * 100
+      }));
 
     // Process visits by clinic
     const clinicMap: Record<string, { visits: number; area: string }> = {};
@@ -274,13 +328,16 @@ const Dashboard: React.FC = () => {
     });
 
     const maxClinicVisits = Math.max(...Object.values(clinicMap).map(c => c.visits), 1);
-    const processedClinicData = Object.entries(clinicMap).slice(0, 4).map(([name, data]) => ({
-      name,
-      label: name.charAt(0),
-      visits: data.visits,
-      area: data.area,
-      percentage: (data.visits / maxClinicVisits) * 100
-    }));
+    const processedClinicData = Object.entries(clinicMap)
+      .sort((a, b) => b[1].visits - a[1].visits)
+      .slice(0, 4)
+      .map(([name, data]) => ({
+        name,
+        label: name.charAt(0),
+        visits: data.visits,
+        area: data.area,
+        percentage: (data.visits / maxClinicVisits) * 100
+      }));
 
     // Process visits by time (using createdAt time)
     const timeMap = { 'صباحاً': 0, 'ظهراً': 0, 'عصراً': 0, 'مساءً': 0 };
@@ -383,7 +440,6 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-[#f6f8f7] dark:bg-[#122017]" dir="rtl">
       {/* Header - Sticky on mobile, regular on desktop */}
       <header className="md:relative sticky top-0 z-10 flex items-center bg-[#f6f8f7] dark:bg-[#122017] p-4 md:p-6 pb-2 md:pb-6 justify-between border-b border-[#122017]/10 dark:border-[#f6f8f7]/10">
-
         <h1 className="text-lg md:text-3xl font-bold">تحليلات الزيارات</h1>
         <div className="md:flex items-center gap-2 hidden">
           <span className="text-sm text-muted-foreground">مرحباً، {user?.firstName} {user?.lastName}</span>
@@ -402,9 +458,6 @@ const Dashboard: React.FC = () => {
                 onChange={(date: Date | null) => {
                   setStartDate(date);
                   handleFilterChange('startDate', date ? date.toISOString().split('T')[0] : '');
-                  if (date) {
-                    setTimeout(() => handleApplyFilters(), 100);
-                  }
                 }}
                 dateFormat="yyyy-MM-dd"
                 placeholderText="تاريخ البداية"
@@ -425,9 +478,6 @@ const Dashboard: React.FC = () => {
                 onChange={(date: Date | null) => {
                   setEndDate(date);
                   handleFilterChange('endDate', date ? date.toISOString().split('T')[0] : '');
-                  if (date) {
-                    setTimeout(() => handleApplyFilters(), 100);
-                  }
                 }}
                 dateFormat="yyyy-MM-dd"
                 placeholderText="تاريخ النهاية"
@@ -442,10 +492,13 @@ const Dashboard: React.FC = () => {
               <CalendarDays className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#38e079] pointer-events-none" />
             </div>
 
+            {/* Specialties Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">جميع التخصصات</span>
+                  <span className="text-sm font-medium">
+                    {filters.specialty ? filters.specialty : 'جميع التخصصات'}
+                  </span>
                   <span className="mr-2">▼</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -453,33 +506,30 @@ const Dashboard: React.FC = () => {
                 <div className="p-2 space-y-1">
                   <div
                     className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('specialization', '');
-                      handleApplyFilters();
-                    }}
+                    onClick={() => handleFilterChange('specialty', '')}
                   >
                     الكل
                   </div>
-                  {visitsBySpecialty.map((specialty, i) => (
+                  {availableSpecialties.map((specialty, i) => (
                     <div
                       key={i}
                       className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('specialization', specialty.name);
-                        handleApplyFilters();
-                      }}
+                      onClick={() => handleFilterChange('specialty', specialty)}
                     >
-                      {specialty.name}
+                      {specialty}
                     </div>
                   ))}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Doctors Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">الأطباء</span>
+                  <span className="text-sm font-medium">
+                    {filters.doctorName ? filters.doctorName : 'جميع الأطباء'}
+                  </span>
                   <span className="mr-2">▼</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -487,33 +537,30 @@ const Dashboard: React.FC = () => {
                 <div className="p-2 space-y-1">
                   <div
                     className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('doctorName', '');
-                      handleApplyFilters();
-                    }}
+                    onClick={() => handleFilterChange('doctorName', '')}
                   >
                     الكل
                   </div>
-                  {visitsByDoctor.map((doctor, i) => (
+                  {availableDoctors.map((doctor, i) => (
                     <div
                       key={i}
                       className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('doctorName', doctor.name);
-                        handleApplyFilters();
-                      }}
+                      onClick={() => handleFilterChange('doctorName', doctor)}
                     >
-                      {doctor.name}
+                      {doctor}
                     </div>
                   ))}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Areas Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">المناطق</span>
+                  <span className="text-sm font-medium">
+                    {filters.clinic ? filters.clinic : 'جميع المناطق'}
+                  </span>
                   <span className="mr-2">▼</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -521,33 +568,30 @@ const Dashboard: React.FC = () => {
                 <div className="p-2 space-y-1">
                   <div
                     className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('clinic', '');
-                      handleApplyFilters();
-                    }}
+                    onClick={() => handleFilterChange('clinic', '')}
                   >
                     الكل
                   </div>
-                  {visitsByArea.map((area, i) => (
+                  {availableAreas.map((area, i) => (
                     <div
                       key={i}
                       className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('clinic', area.name);
-                        handleApplyFilters();
-                      }}
+                      onClick={() => handleFilterChange('clinic', area)}
                     >
-                      {area.name}
+                      {area}
                     </div>
                   ))}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Products Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">المنتجات</span>
+                  <span className="text-sm font-medium">
+                    {filters.products ? filters.products : 'جميع المنتجات'}
+                  </span>
                   <span className="mr-2">▼</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -555,112 +599,44 @@ const Dashboard: React.FC = () => {
                 <div className="p-2 space-y-1">
                   <div
                     className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('products', '');
-                      handleApplyFilters();
-                    }}
+                    onClick={() => handleFilterChange('products', '')}
                   >
                     الكل
                   </div>
-                  {visitsByProduct.map((product, i) => (
+                  {availableProducts.map((product, i) => (
                     <div
                       key={i}
                       className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('products', product.name);
-                        handleApplyFilters();
-                      }}
+                      onClick={() => handleFilterChange('products', product)}
                     >
-                      {product.name}
+                      {product}
                     </div>
                   ))}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">فئة المنتج</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 text-sm text-muted-foreground">جميع الفئات</div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">العيادات</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 space-y-1">
-                  <div
-                    className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('clinic', '');
-                      handleApplyFilters();
-                    }}
-                  >
-                    الكل
-                  </div>
-                  {visitsByClinic.map((clinic, i) => (
-                    <div
-                      key={i}
-                      className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('clinic', clinic.name);
-                        handleApplyFilters();
-                      }}
-                    >
-                      {clinic.name}
-                    </div>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">تصنيفات الأطباء</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 space-y-1">
-                  <div
-                    className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('segment', '');
-                      handleApplyFilters();
-                    }}
-                  >
-                    الكل
-                  </div>
-                  {doctorClassifications.map((cat, i) => (
-                    <div
-                      key={i}
-                      className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('segment', cat.category);
-                        handleApplyFilters();
-                      }}
-                    >
-                      فئة {cat.category}
-                    </div>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Apply and Reset Buttons */}
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleApplyFilters}
+                className="bg-[#38e079] hover:bg-[#38e079]/90 h-10 rounded-full"
+              >
+                تطبيق الفلتر
+              </Button>
+              <Button 
+                onClick={handleResetFilters}
+                variant="outline"
+                className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10"
+              >
+                إعادة تعيين
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Analytics Cards - Grid 2x3 on mobile, 3 columns on desktop */}
+        {/* Rest of your component remains the same... */}
+        {/* Analytics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
           {/* Visits by Day */}
           <Card className="rounded-xl border-[#122017]/10 dark:border-[#f6f8f7]/10 bg-white dark:bg-[#122017]">
@@ -691,6 +667,7 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* Other cards remain the same... */}
           {/* Visits by Physician */}
           <Card className="rounded-xl border-[#122017]/10 dark:border-[#f6f8f7]/10 bg-white dark:bg-[#122017]">
             <CardContent className="p-3 md:p-6 flex flex-col gap-2">
