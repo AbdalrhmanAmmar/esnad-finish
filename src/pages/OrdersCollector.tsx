@@ -1,27 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Package, 
-  Calendar, 
-  User, 
-  Building2, 
-  RefreshCw, 
-  Edit3, 
-  TrendingUp, 
-  Users, 
-  Store, 
+import {
+  Package,
+  RefreshCw,
+  Edit3,
+  TrendingUp,
+  Users,
+  Store,
   Download,
-  List 
+  List
 } from 'lucide-react';
-import { 
-  getSalesReps, 
-  getPharmacies, 
+import {
+  getSalesReps,
+  getPharmacies,
   exportFinalOrdersToExcel,
   FilteredOrdersParams,
-  FilteredOrdersResponse 
+  FilteredOrdersResponse
 } from '@/api/OrdersCollection';
 import { getFinalOrders, FinalOrderData } from '@/api/OrdersOfficer';
 import { useToast } from '@/hooks/use-toast';
@@ -39,13 +36,13 @@ import {
 
 const OrdersCollector: React.FC = () => {
   const { user } = useAuthStore();
-  const ifOrderOfficerRole = user?.role === 'ORDERS OFFICERS';
+  const isOrderOfficerRole = user?.role === 'ORDERS OFFICERS';
   const [orders, setOrders] = useState<FinalOrderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<FinalOrderData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [salesReps, setSalesReps] = useState([]);
-  const [pharmacies, setPharmacies] = useState([]);
+  const [salesReps, setSalesReps] = useState<any[]>([]);
+  const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -72,98 +69,58 @@ const OrdersCollector: React.FC = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchOrders = async (page: number = 1, currentFilters: FilterOptions = filters) => {
+  const calculateOrderTotal = (orderDetails: FinalOrderData['orderDetails']) => {
+    return orderDetails.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+
+  const fetchOrders = useCallback(async (page: number = 1, currentFilters: FilterOptions = filters) => {
     try {
       setLoading(true);
-      
-      const response = await getFinalOrders();
-      
-      // استخراج البيانات من الاستجابة
-      const ordersRaw: FinalOrderData[] = Array.isArray((response as any)?.data) 
-        ? (response as any).data 
-        : (response as any)?.data?.orders || (response as any)?.data || [];
-      
-      const statsServer: any = (response as any)?.statistics || null;
-      const serverTotalCount = (response as any)?.totalCount || ordersRaw.length;
 
-      // استخراج المندوبين والصيدليات الفريدة
-      const uniqueSalesReps = Array.from(
-        new Set(ordersRaw.map((order: FinalOrderData) => order.salesRepName))
-      ).map(name => ({
-        label: name,
-        value: name,
-      }));
+      const apiParams: FilteredOrdersParams = {
+        page: page,
+        itemsPerPage: itemsPerPage,
+        ...(currentFilters.search && { search: currentFilters.search }),
+        ...(currentFilters.status && currentFilters.status !== 'all' && { status: currentFilters.status as 'pending' | 'approved' | 'rejected' | 'all' }),
+        ...(currentFilters.salesRep && currentFilters.salesRep !== 'all' && { salesRep: currentFilters.salesRep }),
+        ...(currentFilters.pharmacy && currentFilters.pharmacy !== 'all' && { pharmacy: currentFilters.pharmacy }),
+        ...(currentFilters.startDate && { startDate: currentFilters.startDate.toISOString().split('T')[0] }),
+        ...(currentFilters.endDate && { endDate: currentFilters.endDate.toISOString().split('T')[0] })
+      };
+      
+      const response = await getFinalOrders(apiParams);
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch orders');
+      }
 
-      setSalesReps(uniqueSalesReps);
+      const ordersData: FinalOrderData[] = response.data || [];
+      const statsServer = response.statistics;
 
-      const uniquePharmacies = Array.from(
-        new Set(ordersRaw.map((order: FinalOrderData) => order.pharmacyName))
-      ).map(name => ({
-        label: name,
-        value: name,
-      }));
-
-      setPharmacies(uniquePharmacies);
+      setOrders(ordersData);
       
-      // تطبيق الفلاتر محلياً
-      let filteredData = ordersRaw;
-      
-      if (currentFilters.search) {
-        filteredData = filteredData.filter(order => 
-          order.salesRepName.toLowerCase().includes(currentFilters.search!.toLowerCase()) ||
-          order.pharmacyName.toLowerCase().includes(currentFilters.search!.toLowerCase()) ||
-          order.orderId.toLowerCase().includes(currentFilters.search!.toLowerCase())
-        );
-      }
-      
-      if (currentFilters.status && currentFilters.status !== 'all') {
-        filteredData = filteredData.filter(order => order.FinalOrderStatusValue === currentFilters.status);
-      }
-      
-      if (currentFilters.salesRep && currentFilters.salesRep !== 'all') {
-        filteredData = filteredData.filter(order => order.salesRepName === currentFilters.salesRep);
-      }
-      
-      if (currentFilters.pharmacy && currentFilters.pharmacy !== 'all') {
-        filteredData = filteredData.filter(order => order.pharmacyName === currentFilters.pharmacy);
-      }
-      
-      if (currentFilters.startDate) {
-        filteredData = filteredData.filter(order => new Date(order.visitDate) >= currentFilters.startDate!);
-      }
-      
-      if (currentFilters.endDate) {
-        filteredData = filteredData.filter(order => new Date(order.visitDate) <= currentFilters.endDate!);
-      }
-      
-      // تطبيق التصفح محلياً
-      const startIndex = (page - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      const paginatedData = filteredData.slice(startIndex, endIndex);
-      
-      setOrders(paginatedData);
       setPagination({
-        currentPage: page,
-        totalPages: Math.ceil(filteredData.length / itemsPerPage),
-        totalCount: filteredData.length,
-        hasNextPage: endIndex < filteredData.length,
-        hasPrevPage: page > 1
+        currentPage: response.currentPage || page,
+        totalPages: response.totalPages || 1,
+        totalCount: response.totalCount || 0,
+        hasNextPage: response.hasNextPage || false,
+        hasPrevPage: response.hasPrevPage || false
       });
 
-      // حساب الإحصائيات من البيانات المفلترة
+      // تحديث الإحصائيات من الخادم
       if (statsServer) {
         setStatistics({
-          totalOrders: filteredData.length,
-          pendingOrders: statsServer.totalPending ?? statsServer.pending ?? filteredData.filter(o => o.FinalOrderStatusValue === 'pending').length,
-          approvedOrders: statsServer.totalApproved ?? statsServer.approved ?? filteredData.filter(o => o.FinalOrderStatusValue === 'approved').length,
-          rejectedOrders: statsServer.totalRejected ?? statsServer.rejected ?? filteredData.filter(o => o.FinalOrderStatusValue === 'rejected').length,
-          totalValue: statsServer.totalValue ?? statsServer.totalAmount ?? filteredData.reduce((sum, o) => sum + calculateOrderTotal(o.orderDetails), 0)
+          totalOrders: response.totalCount || 0,
+          pendingOrders: statsServer.totalPending || 0,
+          approvedOrders: statsServer.totalApproved || 0,
+          rejectedOrders: statsServer.totalRejected || 0,
+          totalValue: ordersData.reduce((total, order) => total + calculateOrderTotal(order.orderDetails), 0)
         });
       } else {
-        const stats = filteredData.reduce((acc, order) => {
+        // حساب الإحصائيات محلياً إذا لم تكن متوفرة من الخادم
+        const stats = ordersData.reduce((acc, order) => {
           const total = calculateOrderTotal(order.orderDetails);
           acc.totalValue += total;
-          acc.totalOrders++;
           
           switch (order.FinalOrderStatusValue) {
             case 'pending':
@@ -178,7 +135,7 @@ const OrdersCollector: React.FC = () => {
           }
           return acc;
         }, {
-          totalOrders: 0,
+          totalOrders: response.totalCount || 0,
           pendingOrders: 0,
           approvedOrders: 0,
           rejectedOrders: 0,
@@ -190,7 +147,7 @@ const OrdersCollector: React.FC = () => {
       if (page === 1) {
         toast({
           title: 'تم تحميل الطلبات بنجاح',
-          description: `تم العثور على ${filteredData.length} طلب من إجمالي ${serverTotalCount}`,
+          description: `تم العثور على ${response.totalCount} طلب إجماليًا`,
         });
       }
     } catch (error) {
@@ -203,7 +160,7 @@ const OrdersCollector: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemsPerPage, filters, toast]);
 
   const fetchFilterData = async () => {
     try {
@@ -233,7 +190,6 @@ const OrdersCollector: React.FC = () => {
   }, [filters]);
 
   useEffect(() => {
-    // عند تغيير عدد العناصر في الصفحة، نعيد تحميل الصفحة الأولى
     fetchOrders(1, filters);
   }, [itemsPerPage]);
 
@@ -268,16 +224,13 @@ const OrdersCollector: React.FC = () => {
 
       const blob = await exportFinalOrdersToExcel(params);
       
-      // إنشاء رابط التحميل
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       
-      // تحديد اسم الملف
       const fileName = `الطلبات_النهائية_${new Date().toISOString().split('T')[0]}.xlsx`;
       link.download = fileName;
       
-      // تحميل الملف
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -308,25 +261,6 @@ const OrdersCollector: React.FC = () => {
     });
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { label: 'قيد الانتظار', variant: 'secondary' as const },
-      approved: { label: 'مقبول', variant: 'default' as const },
-      rejected: { label: 'مرفوض', variant: 'destructive' as const },
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || {
-      label: status,
-      variant: 'outline' as const,
-    };
-
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const calculateOrderTotal = (orderDetails: FinalOrderData['orderDetails']) => {
-    return orderDetails.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
   const handleEditOrder = (order: FinalOrderData) => {
     setSelectedOrder(order);
     setIsModalOpen(true);
@@ -338,10 +272,10 @@ const OrdersCollector: React.FC = () => {
   };
 
   const handleOrderUpdated = () => {
-    fetchOrders();
+    fetchOrders(pagination.currentPage, filters);
   };
 
-  if (loading) {
+  if (loading && orders.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex items-center space-x-2">
@@ -388,7 +322,7 @@ const OrdersCollector: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-600 dark:text-blue-400">إجمالي الطلبات</p>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{statistics.totalOrders}</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{statistics.totalOrders.toLocaleString()}</p>
               </div>
               <div className="p-2 bg-blue-200 dark:bg-blue-800 rounded-lg">
                 <Package className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -402,7 +336,7 @@ const OrdersCollector: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-600 dark:text-green-400">مقبولة</p>
-                <p className="text-2xl font-bold text-green-900 dark:text-green-100">{statistics.approvedOrders}</p>
+                <p className="text-2xl font-bold text-green-900 dark:text-green-100">{statistics.approvedOrders.toLocaleString()}</p>
               </div>
               <div className="p-2 bg-green-200 dark:bg-green-800 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -416,7 +350,7 @@ const OrdersCollector: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">في الانتظار</p>
-                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{statistics.pendingOrders}</p>
+                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{statistics.pendingOrders.toLocaleString()}</p>
               </div>
               <div className="p-2 bg-yellow-200 dark:bg-yellow-800 rounded-lg">
                 <Users className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
@@ -430,7 +364,7 @@ const OrdersCollector: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-red-600 dark:text-red-400">مرفوضة</p>
-                <p className="text-2xl font-bold text-red-900 dark:text-red-100">{statistics.rejectedOrders}</p>
+                <p className="text-2xl font-bold text-red-900 dark:text-red-100">{statistics.rejectedOrders.toLocaleString()}</p>
               </div>
               <div className="p-2 bg-red-200 dark:bg-red-800 rounded-lg">
                 <Users className="h-6 w-6 text-red-600 dark:text-red-400" />
@@ -471,7 +405,7 @@ const OrdersCollector: React.FC = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              الطلبيات ({orders.length} من {pagination.totalCount})
+              الطلبيات ({orders.length} من {pagination.totalCount.toLocaleString()})
             </CardTitle>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -568,7 +502,7 @@ const OrdersCollector: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      {ifOrderOfficerRole && (
+                      {isOrderOfficerRole && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -629,7 +563,7 @@ const OrdersCollector: React.FC = () => {
       </Card>
 
       {/* Pagination */}
-      {!loading && orders.length > 0 && (
+      {!loading && orders.length > 0 && pagination.totalPages > 1 && (
         <div className="flex justify-center">
           <Pagination
             currentPage={pagination.currentPage}
