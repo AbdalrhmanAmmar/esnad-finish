@@ -3,7 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Package, Calendar, User, Building2, RefreshCw, Edit3, TrendingUp, Users, Store, Download } from 'lucide-react';
+import { 
+  Package, 
+  Calendar, 
+  User, 
+  Building2, 
+  RefreshCw, 
+  Edit3, 
+  TrendingUp, 
+  Users, 
+  Store, 
+  Download,
+  List 
+} from 'lucide-react';
 import { 
   getSalesReps, 
   getPharmacies, 
@@ -17,7 +29,13 @@ import { OrderEditModal } from '@/components/ui/OrderEditModal';
 import { Pagination } from "@/components/ui/pagination";
 import { OrdersFilter, FilterOptions } from '@/components/ui/OrdersFilter';
 import { useAuthStore } from '@/stores/authStore';
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const OrdersCollector: React.FC = () => {
   const { user } = useAuthStore();
@@ -28,6 +46,7 @@ const OrdersCollector: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [salesReps, setSalesReps] = useState([]);
   const [pharmacies, setPharmacies] = useState([]);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -58,32 +77,36 @@ const OrdersCollector: React.FC = () => {
       setLoading(true);
       
       const response = await getFinalOrders();
-      console.log(response.data)
+      
+      // استخراج البيانات من الاستجابة
+      const ordersRaw: FinalOrderData[] = Array.isArray((response as any)?.data) 
+        ? (response as any).data 
+        : (response as any)?.data?.orders || (response as any)?.data || [];
+      
+      const statsServer: any = (response as any)?.statistics || null;
+      const serverTotalCount = (response as any)?.totalCount || ordersRaw.length;
 
+      // استخراج المندوبين والصيدليات الفريدة
+      const uniqueSalesReps = Array.from(
+        new Set(ordersRaw.map((order: FinalOrderData) => order.salesRepName))
+      ).map(name => ({
+        label: name,
+        value: name,
+      }));
 
-const uniqueSalesReps = Array.from(
-      new Set(response.data.map((order: FinalOrderData) => order.salesRepName))
-    ).map(name => ({
-      label: name,
-      value: name,
-    }));
+      setSalesReps(uniqueSalesReps);
 
+      const uniquePharmacies = Array.from(
+        new Set(ordersRaw.map((order: FinalOrderData) => order.pharmacyName))
+      ).map(name => ({
+        label: name,
+        value: name,
+      }));
 
-    setSalesReps(uniqueSalesReps);
-
-
-const uniquePharmacies = Array.from(
-      new Set(response.data.map((order: FinalOrderData) => order.pharmacyName))
-    ).map(name => ({
-      label: name,
-      value: name,
-    }));
-
-
-    setPharmacies(uniquePharmacies);
+      setPharmacies(uniquePharmacies);
       
       // تطبيق الفلاتر محلياً
-      let filteredData = response.data;
+      let filteredData = ordersRaw;
       
       if (currentFilters.search) {
         filteredData = filteredData.filter(order => 
@@ -113,52 +136,61 @@ const uniquePharmacies = Array.from(
         filteredData = filteredData.filter(order => new Date(order.visitDate) <= currentFilters.endDate!);
       }
       
-      // تطبيق التصفح
-      const startIndex = (page - 1) * 10;
-      const endIndex = startIndex + 10;
+      // تطبيق التصفح محلياً
+      const startIndex = (page - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
       const paginatedData = filteredData.slice(startIndex, endIndex);
       
       setOrders(paginatedData);
-       setPagination({
-         currentPage: page,
-         totalPages: Math.ceil(filteredData.length / 10),
-         totalCount: filteredData.length,
-         hasNextPage: endIndex < filteredData.length,
-         hasPrevPage: page > 1
-       });
+      setPagination({
+        currentPage: page,
+        totalPages: Math.ceil(filteredData.length / itemsPerPage),
+        totalCount: filteredData.length,
+        hasNextPage: endIndex < filteredData.length,
+        hasPrevPage: page > 1
+      });
 
       // حساب الإحصائيات من البيانات المفلترة
-      const stats = filteredData.reduce((acc, order) => {
-        const total = calculateOrderTotal(order.orderDetails);
-        acc.totalValue += total;
-        acc.totalOrders++;
-        
-        switch (order.FinalOrderStatusValue) {
-          case 'pending':
-            acc.pendingOrders++;
-            break;
-          case 'approved':
-            acc.approvedOrders++;
-            break;
-          case 'rejected':
-            acc.rejectedOrders++;
-            break;
-        }
-        return acc;
-      }, {
-        totalOrders: 0,
-        pendingOrders: 0,
-        approvedOrders: 0,
-        rejectedOrders: 0,
-        totalValue: 0
-      });
-      
-      setStatistics(stats);
+      if (statsServer) {
+        setStatistics({
+          totalOrders: filteredData.length,
+          pendingOrders: statsServer.totalPending ?? statsServer.pending ?? filteredData.filter(o => o.FinalOrderStatusValue === 'pending').length,
+          approvedOrders: statsServer.totalApproved ?? statsServer.approved ?? filteredData.filter(o => o.FinalOrderStatusValue === 'approved').length,
+          rejectedOrders: statsServer.totalRejected ?? statsServer.rejected ?? filteredData.filter(o => o.FinalOrderStatusValue === 'rejected').length,
+          totalValue: statsServer.totalValue ?? statsServer.totalAmount ?? filteredData.reduce((sum, o) => sum + calculateOrderTotal(o.orderDetails), 0)
+        });
+      } else {
+        const stats = filteredData.reduce((acc, order) => {
+          const total = calculateOrderTotal(order.orderDetails);
+          acc.totalValue += total;
+          acc.totalOrders++;
+          
+          switch (order.FinalOrderStatusValue) {
+            case 'pending':
+              acc.pendingOrders++;
+              break;
+            case 'approved':
+              acc.approvedOrders++;
+              break;
+            case 'rejected':
+              acc.rejectedOrders++;
+              break;
+          }
+          return acc;
+        }, {
+          totalOrders: 0,
+          pendingOrders: 0,
+          approvedOrders: 0,
+          rejectedOrders: 0,
+          totalValue: 0
+        });
+        setStatistics(stats);
+      }
       
       if (page === 1) {
         toast({
           title: 'تم تحميل الطلبات بنجاح',
-          description: `تم العثور على ${response.totalCount} طلب`,
+          description: `تم العثور على ${filteredData.length} طلب من إجمالي ${serverTotalCount}`,
         });
       }
     } catch (error) {
@@ -187,7 +219,6 @@ const uniquePharmacies = Array.from(
     }
   };
 
-
   useEffect(() => {
     fetchOrders();
     fetchFilterData();
@@ -201,6 +232,11 @@ const uniquePharmacies = Array.from(
     return () => clearTimeout(timeoutId);
   }, [filters]);
 
+  useEffect(() => {
+    // عند تغيير عدد العناصر في الصفحة، نعيد تحميل الصفحة الأولى
+    fetchOrders(1, filters);
+  }, [itemsPerPage]);
+
   const handleFiltersChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
   };
@@ -211,6 +247,10 @@ const uniquePharmacies = Array.from(
 
   const handleRefresh = () => {
     fetchOrders(pagination.currentPage, filters);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
   };
 
   const handleExport = async () => {
@@ -342,13 +382,13 @@ const uniquePharmacies = Array.from(
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-600 dark:text-blue-400">إجمالي الطلبات</p>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{pagination.totalCount}</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{statistics.totalOrders}</p>
               </div>
               <div className="p-2 bg-blue-200 dark:bg-blue-800 rounded-lg">
                 <Package className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -385,6 +425,20 @@ const uniquePharmacies = Array.from(
           </CardContent>
         </Card>
 
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">مرفوضة</p>
+                <p className="text-2xl font-bold text-red-900 dark:text-red-100">{statistics.rejectedOrders}</p>
+              </div>
+              <div className="p-2 bg-red-200 dark:bg-red-800 rounded-lg">
+                <Users className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -411,13 +465,32 @@ const uniquePharmacies = Array.from(
         isLoading={loading}
       />
 
-      {/* Orders List */}
+      {/* Orders List Header with Items Per Page Selector */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            الطلبيات ({orders.length} من {pagination.totalCount})
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              الطلبيات ({orders.length} من {pagination.totalCount})
+            </CardTitle>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <List className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">عدد العناصر:</span>
+                <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -496,21 +569,16 @@ const uniquePharmacies = Array.from(
                         </div>
                       </div>
                       {ifOrderOfficerRole && (
-                        <>
-                                  <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditOrder(order)}
-                        className="hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
-                      >
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        عرض/تعديل
-                      </Button>
-                        </>
-
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditOrder(order)}
+                          className="hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
+                        >
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          عرض/تعديل
+                        </Button>
                       )}
-                      
-            
                     </div>
 
                     <Separator className="my-4" />
@@ -540,9 +608,16 @@ const uniquePharmacies = Array.from(
                     </div>
 
                     <div className="mt-4 pt-4 border-t">
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>تاريخ الإنشاء: {formatDate(order.createdAt)}</span>
-                        <span>آخر تحديث: {formatDate(order.updatedAt)}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="text-lg font-bold">
+                          الإجمالي: {calculateOrderTotal(order.orderDetails).toLocaleString()} د.ل
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>تاريخ الإنشاء: {formatDate(order.createdAt)}</span>
+                          {order.updatedAt !== order.createdAt && (
+                            <span>آخر تحديث: {formatDate(order.updatedAt)}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -562,7 +637,7 @@ const uniquePharmacies = Array.from(
             onPageChange={handlePageChange}
             showInfo={true}
             totalItems={pagination.totalCount}
-            itemsPerPage={10}
+            itemsPerPage={itemsPerPage}
           />
         </div>
       )}

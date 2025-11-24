@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { TrendingUp, Calendar as CalendarIcon, Activity, ClipboardList, PackageOpen } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarInitials } from '@/components/ui/avatar';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -84,7 +86,12 @@ const MedicalSalesdata: React.FC = () => {
       const payload = (res && (res as any).data) ? (res as any).data : (res as any);
 
       // بيانات المندوب الطبي
-      setMedicalRep(payload?.medicalRep || payload?.data?.medicalRep || null);
+      const srList: any[] = (payload?.salesReps || payload?.data?.salesReps || []) as any[];
+      let rep = payload?.medicalRep || payload?.data?.medicalRep || null;
+      if (!rep && srList.length > 0) {
+        rep = (srList.find((r: any) => r?.salesRep?._id === medicalRepId)?.salesRep) || srList[0]?.salesRep || null;
+      }
+      setMedicalRep(rep);
 
       // زيارات الأطباء
       const dv: any[] = (payload?.doctorVisits || payload?.data?.doctorVisits || []) as any[];
@@ -398,25 +405,44 @@ const MedicalSalesdata: React.FC = () => {
 
       {/* معلومات المندوب الطبي */}
       {medicalRep && (
-        <Card>
+        <Card className="bg-gradient-to-br from-background to-muted/30 border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">بيانات المندوب الطبي</CardTitle>
-            <CardDescription>المعلومات الأساسية</CardDescription>
+            <CardTitle className="text-lg">بيانات مندوب المبيعات</CardTitle>
+            <CardDescription>نظرة سريعة</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <div className="text-sm text-muted-foreground">الاسم</div>
-              <div className="font-medium">{medicalRep?.name || medicalRep?.username}</div>
+          <CardContent>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarInitials className="text-base">
+                    {(medicalRep?.name || medicalRep?.username || '?')
+                      .split(' ')
+                      .slice(0,2)
+                      .map((s: string) => s[0])
+                      .join('')}
+                  </AvatarInitials>
+                </Avatar>
+                <div className="text-right">
+                  <div className="font-bold text-lg">
+                    {medicalRep?.name || medicalRep?.username}
+                  </div>
+                  {medicalRep?.username && (
+                    <div className="text-sm text-muted-foreground">@{medicalRep.username}</div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{medicalRep?.role || 'SALES REP'}</Badge>
+              </div>
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">المسمى</div>
-              <div className="font-medium">{medicalRep?.role || 'MEDICAL REP'}</div>
-            </div>
-            <div className="md:col-span-2">
-              <div className="text-sm text-muted-foreground">المناطق</div>
-              <div className="flex flex-wrap gap-2 mt-1">
+
+            <div className="mt-4">
+              <div className="text-sm text-muted-foreground mb-2">المناطق</div>
+              <div className="flex flex-wrap gap-2">
                 {(medicalRep?.area || []).map((a: string, idx: number) => (
-                  <span key={idx} className="px-2 py-1 text-xs rounded bg-muted">{a}</span>
+                  <Badge key={idx} variant="outline" className="text-xs">
+                    {a}
+                  </Badge>
                 ))}
               </div>
             </div>
