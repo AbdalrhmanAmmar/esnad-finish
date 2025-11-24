@@ -123,12 +123,12 @@ const App = () => (
                       </ProtectedRoute>
                     } />
                     <Route path="/dashboards/admin" element={
-                      <ProtectedRoute requiredRoles={['ADMIN', 'SALES SUPERVISOR', 'FINANCIAL OFFICER','FINANCIAL MANAGER','ASSITANT' ,'GENERAL MANAGER',]}>
+                      <ProtectedRoute>
                         <AdminDashboard />
                       </ProtectedRoute>
                     } />
                     <Route path="/dashboards/admin/:id" element={
-                      <ProtectedRoute requiredRoles={['ADMIN', 'SALES SUPERVISOR', 'FINANCIAL OFFICER','FINANCIAL MANAGER','ASSITANT' ,'GENERAL MANAGER']}>
+                      <ProtectedRoute>
                         <PharmacyCard />
                       </ProtectedRoute>
                     } />
@@ -168,36 +168,12 @@ const App = () => (
                       </ProtectedRoute>
                     } />
 
-                    <Route path="/orders" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/orders/samples" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/orders/marketing" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/collections" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/collections/financial" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/financial-collector/money-collection" element={
-                      <ProtectedRoute requiredRoles={['ADMIN', 'FINANCIAL MANAGER', 'SALES SUPERVISOR', 'FINANCIAL OFFICER', 'ASSITANT' , 'GENERAL MANAGER']}>
-                        <MoneyCollection />
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/orders" element={<Dashboard />} />
+                    <Route path="/orders/samples" element={<Dashboard />} />
+                    <Route path="/orders/marketing" element={<Dashboard />} />
+                    <Route path="/collections" element={<Dashboard />} />
+                    <Route path="/collections/financial" element={<Dashboard />} />
+                    <Route path="/financial-collector/money-collection" element={<MoneyCollection />} />
                     <Route path="/financial-collector/orders-collection" element={
                       <ProtectedRoute requiredRoles={['ADMIN', 'FINANCIAL MANAGER', 'SALES SUPERVISOR', 'FINANCIAL OFFICER', 'ASSITANT','GENERAL MANAGER']}>
                         <OrdersCollection />
@@ -213,16 +189,8 @@ const App = () => (
                         <OrdersCollector />
                       </ProtectedRoute>
                     } />
-                    <Route path="/collections/orders" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/evaluations" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/collections/orders" element={<Dashboard />} />
+                    <Route path="/evaluations" element={<Dashboard />} />
                     <Route path="/ReceipBooks-manager" element={
                       <ProtectedRoute>
                         <ReceiptBooksManager />
@@ -233,26 +201,10 @@ const App = () => (
                         <ReceiptBookDetails />
                       </ProtectedRoute>
                     } />
-                    <Route path="/evaluations/representatives" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/management" element={
-                      <ProtectedRoute requiredRoles={['ADMIN', 'admin', 'manager']}>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/management/work-days" element={
-                      <ProtectedRoute requiredRoles={['ADMIN', 'admin', 'manager']}>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/management/lost-orders" element={
-                      <ProtectedRoute requiredRoles={['ADMIN', 'admin', 'manager']}>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/evaluations/representatives" element={<Dashboard />} />
+                    <Route path="/management" element={<Dashboard />} />
+                    <Route path="/management/work-days" element={<Dashboard />} />
+                    <Route path="/management/lost-orders" element={<Dashboard />} />
                     <Route path="/management/data/products" element={
                       <ProtectedRoute requiredRoles={['ADMIN', 'admin', 'manager']}>
                         <ProductsManagement />
@@ -418,16 +370,8 @@ const App = () => (
                         <SamplesMedicalRep />
                       </ProtectedRoute>
                     } />
-                    <Route path="/users" element={
-                      <ProtectedRoute requiredRoles={['ADMIN', 'admin', 'manager']}>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/users/add" element={
-                      <ProtectedRoute requiredRoles={['ADMIN', 'admin']}>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/users" element={<Dashboard />} />
+                    <Route path="/users/add" element={<Dashboard />} />
                     <Route path="/sample-form" element={
                       <ProtectedRoute>
                         <SamplesForm />
