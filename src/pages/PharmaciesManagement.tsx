@@ -71,6 +71,10 @@ const PharmaciesManagement = () => {
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [allPharmacies, setAllPharmacies] = useState<Pharmacy[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [districts, setDistricts] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -91,15 +95,14 @@ const PharmaciesManagement = () => {
   const fetchPharmacies = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
-          params.append(key, value.toString());
-        }
+      const response = await getPharmacies({
+        page: filters.page,
+        limit: filters.limit,
+        search: filters.search,
+        area: filters.area,
+        city: filters.city,
+        district: filters.district,
       });
-
-      const response = await getPharmacies(params.toString());
       
       if (response.success) {
         setPharmacies(response.data);
@@ -115,37 +118,38 @@ const PharmaciesManagement = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchAllForFilters = async () => {
+      try {
+        const res = await getPharmacies({ limit: 10000 });
+        if (res.success) {
+          setAllPharmacies(res.data);
+          const uniqueAreas = Array.from(new Set(res.data.map((p: Pharmacy) => p.area).filter(Boolean)));
+          const uniqueCities = Array.from(new Set(res.data.map((p: Pharmacy) => p.city).filter(Boolean)));
+          const uniqueDistricts = Array.from(new Set(res.data.map((p: Pharmacy) => p.district).filter(Boolean)));
+          setAreas(uniqueAreas);
+          setCities(uniqueCities);
+          setDistricts(uniqueDistricts);
+        }
+      } catch (error) {
+        console.error('Error fetching all pharmacies for filters:', error);
+      }
+    };
+    fetchAllForFilters();
+  }, []);
+
   const handleExportToExcel = async () => {
     try {
       setExporting(true);
-      const params = new URLSearchParams();
-      
-      // إضافة الفلاتر للتصدير
-      if (filters.search) params.append('search', filters.search);
-      if (filters.area) params.append('area', filters.area);
-      if (filters.city) params.append('city', filters.city);
-      if (filters.district) params.append('district', filters.district);
-
-      const response = await exportPharmacies(params.toString());
-      
-      // إنشاء رابط التحميل
-      const blob = new Blob([response], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      const result = await exportPharmacies({
+        search: filters.search,
+        area: filters.area,
+        city: filters.city,
+        district: filters.district,
       });
-      
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      
-      const currentDate = new Date().toISOString().split('T')[0];
-      link.download = `Pharmacies_Export_${currentDate}.xlsx`;
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('تم تصدير البيانات بنجاح!');
+      if (result?.success) {
+        toast.success(result.message || 'تم تصدير البيانات بنجاح!');
+      }
     } catch (error) {
       console.error('Error exporting pharmacies:', error);
       toast.error('فشل في تصدير البيانات');
@@ -155,10 +159,11 @@ const PharmaciesManagement = () => {
   };
 
   const handleFilterChange = (key: string, value: string) => {
+    const normalized = value === 'all' ? '' : value;
     setFilters(prev => ({
       ...prev,
-      [key]: value,
-      page: 1 // إعادة تعيين الصفحة عند تغيير الفلتر
+      [key]: key === 'limit' || key === 'page' ? Number(normalized) : normalized,
+      page: 1
     }));
   };
 
@@ -237,32 +242,47 @@ const PharmaciesManagement = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="area">المنطقة</Label>
-                <Input
-                  id="area"
-                  placeholder="فلترة حسب المنطقة"
-                  value={filters.area}
-                  onChange={(e) => handleFilterChange('area', e.target.value)}
-                />
+                <Select value={filters.area || 'all'} onValueChange={(value) => handleFilterChange('area', value)}>
+                  <SelectTrigger id="area">
+                    <SelectValue placeholder="اختر المنطقة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">الكل</SelectItem>
+                    {areas.map((a) => (
+                      <SelectItem key={a} value={a}>{a}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="city">المدينة</Label>
-                <Input
-                  id="city"
-                  placeholder="فلترة حسب المدينة"
-                  value={filters.city}
-                  onChange={(e) => handleFilterChange('city', e.target.value)}
-                />
+                <Select value={filters.city || 'all'} onValueChange={(value) => handleFilterChange('city', value)}>
+                  <SelectTrigger id="city">
+                    <SelectValue placeholder="اختر المدينة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">الكل</SelectItem>
+                    {cities.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="district">الحي</Label>
-                <Input
-                  id="district"
-                  placeholder="فلترة حسب الحي"
-                  value={filters.district}
-                  onChange={(e) => handleFilterChange('district', e.target.value)}
-                />
+                <Select value={filters.district || 'all'} onValueChange={(value) => handleFilterChange('district', value)}>
+                  <SelectTrigger id="district">
+                    <SelectValue placeholder="اختر الحي" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">الكل</SelectItem>
+                    {districts.map((d) => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
@@ -417,9 +437,6 @@ const PharmaciesManagement = () => {
                       currentPage={pagination.currentPage}
                       totalPages={pagination.totalPages}
                       onPageChange={handlePageChange}
-                      showInfo={true}
-                      totalItems={pagination.totalItems}
-                      itemsPerPage={pagination.itemsPerPage}
                     />
                   </div>
                 )}
