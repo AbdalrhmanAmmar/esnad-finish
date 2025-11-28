@@ -226,6 +226,23 @@ export const getOrdersWithFinalStatus = async (params: FilteredOrdersParams = {}
   }
 };
 
+// Final orders list with filters (OrdersCollector)
+export const getFinalOrdersFiltered = async (params: FilteredOrdersParams = {}): Promise<FilteredOrdersResponse> => {
+  try {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value.toString());
+      }
+    });
+    const response = await api.get(`/order-collector/final-orders?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching final orders with filters:', error);
+    throw error;
+  }
+};
+
 // Get sales representatives for filter
 export const getSalesReps = async (): Promise<{ success: boolean; data: Array<{ _id: string; firstName: string; lastName: string }> }> => {
   try {

@@ -18,9 +18,10 @@ import {
   getPharmacies,
   exportFinalOrdersToExcel,
   FilteredOrdersParams,
-  FilteredOrdersResponse
+  FilteredOrdersResponse,
+  getFinalOrdersFiltered
 } from '@/api/OrdersCollection';
-import { getFinalOrders, FinalOrderData } from '@/api/OrdersOfficer';
+import { FinalOrderData } from '@/api/OrdersOfficer';
 import { useToast } from '@/hooks/use-toast';
 import { OrderEditModal } from '@/components/ui/OrderEditModal';
 import { Pagination } from "@/components/ui/pagination";
@@ -78,71 +79,62 @@ const OrdersCollector: React.FC = () => {
       setLoading(true);
 
       const apiParams: FilteredOrdersParams = {
-        page: page,
-        itemsPerPage: itemsPerPage,
+        page,
+        limit: itemsPerPage,
         ...(currentFilters.search && { search: currentFilters.search }),
-        ...(currentFilters.status && currentFilters.status !== 'all' && { status: currentFilters.status as 'pending' | 'approved' | 'rejected' | 'all' }),
+        ...(currentFilters.status && currentFilters.status !== 'all' && { status: currentFilters.status as 'pending' | 'approved' | 'rejected' }),
         ...(currentFilters.salesRep && currentFilters.salesRep !== 'all' && { salesRep: currentFilters.salesRep }),
         ...(currentFilters.pharmacy && currentFilters.pharmacy !== 'all' && { pharmacy: currentFilters.pharmacy }),
         ...(currentFilters.startDate && { startDate: currentFilters.startDate.toISOString().split('T')[0] }),
         ...(currentFilters.endDate && { endDate: currentFilters.endDate.toISOString().split('T')[0] })
       };
       
-      const response = await getFinalOrders(apiParams);
+      const response = await getFinalOrdersFiltered(apiParams);
       
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch orders');
       }
 
-      const ordersData: FinalOrderData[] = response.data || [];
-      const statsServer = response.statistics;
+      const ordersData: FinalOrderData[] = Array.isArray(response.data) ? response.data : [];
+      const displayedOrders =
+        currentFilters.status && currentFilters.status !== 'all'
+          ? ordersData.filter(o => (o.FinalOrderStatusValue || '').toLowerCase() === currentFilters.status.toLowerCase())
+          : ordersData;
 
-      setOrders(ordersData);
+      setOrders(displayedOrders);
       
       setPagination({
-        currentPage: response.currentPage || page,
-        totalPages: response.totalPages || 1,
-        totalCount: response.totalCount || 0,
-        hasNextPage: response.hasNextPage || false,
-        hasPrevPage: response.hasPrevPage || false
+        currentPage: response.currentPage ?? page,
+        totalPages: response.totalPages ?? 1,
+        totalCount: response.totalCount ?? ordersData.length,
+        hasNextPage: response.hasNextPage ?? (page < (response.totalPages ?? 1)),
+        hasPrevPage: response.hasPrevPage ?? (page > 1)
       });
 
-      // تحديث الإحصائيات من الخادم
-      if (statsServer) {
-        setStatistics({
-          totalOrders: response.totalCount || 0,
-          pendingOrders: statsServer.totalPending || 0,
-          approvedOrders: statsServer.totalApproved || 0,
-          rejectedOrders: statsServer.totalRejected || 0,
-          totalValue: ordersData.reduce((total, order) => total + calculateOrderTotal(order.orderDetails), 0)
-        });
-      } else {
-        // حساب الإحصائيات محلياً إذا لم تكن متوفرة من الخادم
-        const stats = ordersData.reduce((acc, order) => {
-          const total = calculateOrderTotal(order.orderDetails);
-          acc.totalValue += total;
-          
-          switch (order.FinalOrderStatusValue) {
-            case 'pending':
-              acc.pendingOrders++;
-              break;
-            case 'approved':
-              acc.approvedOrders++;
-              break;
-            case 'rejected':
-              acc.rejectedOrders++;
-              break;
-          }
-          return acc;
-        }, {
-          totalOrders: response.totalCount || 0,
-          pendingOrders: 0,
-          approvedOrders: 0,
-          rejectedOrders: 0,
-          totalValue: 0
-        });
-        setStatistics(stats);
-      }
+      const stats = displayedOrders.reduce((acc, order) => {
+        const total = calculateOrderTotal(order.orderDetails);
+        acc.totalValue += total;
+        
+        switch (order.FinalOrderStatusValue) {
+          case 'pending':
+            acc.pendingOrders++;
+            break;
+          case 'approved':
+            acc.approvedOrders++;
+            break;
+          case 'rejected':
+            acc.rejectedOrders++;
+            break;
+        }
+        return acc;
+      }, {
+        totalOrders: response.totalCount ?? displayedOrders.length,
+        pendingOrders: 0,
+        approvedOrders: 0,
+        rejectedOrders: 0,
+        totalValue: 0
+      });
+      setStatistics(stats);
       
       if (page === 1) {
         toast({
@@ -169,8 +161,21 @@ const OrdersCollector: React.FC = () => {
         getPharmacies()
       ]);
       
-      setSalesReps(salesRepsResponse.data || []);
-      setPharmacies(pharmaciesResponse.data || []);
+      const salesRepOptions = Array.isArray(salesRepsResponse.data)
+        ? salesRepsResponse.data.map((rep: any) => ({
+            value: `${rep.firstName} ${rep.lastName}`.trim(),
+            label: `${rep.firstName} ${rep.lastName}`.trim()
+          }))
+        : [];
+      setSalesReps(salesRepOptions);
+
+      const pharmacyOptions = Array.isArray(pharmaciesResponse.data)
+        ? pharmaciesResponse.data.map((ph: any) => ({
+            value: ph.customerSystemDescription,
+            label: ph.customerSystemDescription
+          }))
+        : [];
+      setPharmacies(pharmacyOptions);
     } catch (error) {
       console.error('Error fetching filter data:', error);
     }
@@ -182,11 +187,7 @@ const OrdersCollector: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchOrders(1, filters);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
+    fetchOrders(1, filters);
   }, [filters]);
 
   useEffect(() => {
@@ -322,7 +323,7 @@ const OrdersCollector: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-600 dark:text-blue-400">إجمالي الطلبات</p>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{statistics.totalOrders.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{pagination.totalCount.toLocaleString()}</p>
               </div>
               <div className="p-2 bg-blue-200 dark:bg-blue-800 rounded-lg">
                 <Package className="h-6 w-6 text-blue-600 dark:text-blue-400" />
