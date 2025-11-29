@@ -230,11 +230,14 @@ export const getOrdersWithFinalStatus = async (params: FilteredOrdersParams = {}
 export const getFinalOrdersFiltered = async (params: FilteredOrdersParams = {}): Promise<FilteredOrdersResponse> => {
   try {
     const queryParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        queryParams.append(key, value.toString());
-      }
-    });
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.status && params.status !== 'all') queryParams.append('status', params.status);
+    if (params.salesRep && params.salesRep !== 'all') queryParams.append('SalesRepName', params.salesRep);
+    if (params.pharmacy && params.pharmacy !== 'all') queryParams.append('pharmacy', params.pharmacy);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.search) queryParams.append('search', params.search);
     const response = await api.get(`/order-collector/final-orders?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
@@ -271,7 +274,7 @@ export const exportFinalOrdersToExcel = async (params: FilteredOrdersParams = {}
     const queryParams = new URLSearchParams();
     
     if (params.status && params.status !== 'all') queryParams.append('status', params.status);
-    if (params.salesRep && params.salesRep !== 'all') queryParams.append('salesRep', params.salesRep);
+    if (params.salesRep && params.salesRep !== 'all') queryParams.append('SalesRepName', params.salesRep);
     if (params.pharmacy && params.pharmacy !== 'all') queryParams.append('pharmacy', params.pharmacy);
     if (params.startDate) queryParams.append('startDate', params.startDate);
     if (params.endDate) queryParams.append('endDate', params.endDate);

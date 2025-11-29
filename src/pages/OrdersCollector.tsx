@@ -89,19 +89,33 @@ const OrdersCollector: React.FC = () => {
         ...(currentFilters.endDate && { endDate: currentFilters.endDate.toISOString().split('T')[0] })
       };
       
-      const response = await getFinalOrdersFiltered(apiParams);
-      
+      let response = await getFinalOrdersFiltered(apiParams);
       if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch orders');
+        response = await getFinalOrdersFiltered({ page, limit: itemsPerPage });
       }
 
       const ordersData: FinalOrderData[] = Array.isArray(response.data) ? response.data : [];
-      const displayedOrders =
-        currentFilters.status && currentFilters.status !== 'all'
-          ? ordersData.filter(o => (o.FinalOrderStatusValue || '').toLowerCase() === currentFilters.status.toLowerCase())
-          : ordersData;
+      const normalize = (v: any) => (v ?? '').toString().trim().toLowerCase();
+      let displayedOrders = ordersData;
+      if (currentFilters.status && currentFilters.status !== 'all') {
+        displayedOrders = displayedOrders.filter(o => normalize(o.FinalOrderStatusValue) === normalize(currentFilters.status));
+      }
+      if (currentFilters.salesRep && currentFilters.salesRep !== 'all') {
+        displayedOrders = displayedOrders.filter(o => normalize(o.salesRepName) === normalize(currentFilters.salesRep));
+      }
+      if (currentFilters.pharmacy && currentFilters.pharmacy !== 'all') {
+        displayedOrders = displayedOrders.filter(o => normalize(o.pharmacyName) === normalize(currentFilters.pharmacy));
+      }
 
       setOrders(displayedOrders);
+      if (salesReps.length === 0) {
+        const repNames = Array.from(new Set(ordersData.map(o => o.salesRepName).filter(Boolean))).sort();
+        if (repNames.length) setSalesReps(repNames.map(n => ({ value: n, label: n })));
+      }
+      if (pharmacies.length === 0) {
+        const pharmNames = Array.from(new Set(ordersData.map(o => o.pharmacyName).filter(Boolean))).sort();
+        if (pharmNames.length) setPharmacies(pharmNames.map(n => ({ value: n, label: n })));
+      }
       
       setPagination({
         currentPage: response.currentPage ?? page,
@@ -143,12 +157,36 @@ const OrdersCollector: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast({
-        title: 'خطأ في تحميل الطلبات',
-        description: 'حدث خطأ أثناء تحميل الطلبات',
-        variant: 'destructive',
-      });
+      try {
+        const fallback = await getFinalOrdersFiltered({ page, limit: itemsPerPage });
+        const ordersData: FinalOrderData[] = Array.isArray(fallback.data) ? fallback.data : [];
+        const normalize = (v: any) => (v ?? '').toString().trim().toLowerCase();
+        let displayedOrders = ordersData;
+        if (filters.status && filters.status !== 'all') {
+          displayedOrders = displayedOrders.filter(o => normalize(o.FinalOrderStatusValue) === normalize(filters.status));
+        }
+        if (filters.salesRep && filters.salesRep !== 'all') {
+          displayedOrders = displayedOrders.filter(o => normalize(o.salesRepName) === normalize(filters.salesRep));
+        }
+        if (filters.pharmacy && filters.pharmacy !== 'all') {
+          displayedOrders = displayedOrders.filter(o => normalize(o.pharmacyName) === normalize(filters.pharmacy));
+        }
+        setOrders(displayedOrders);
+        setPagination({
+          currentPage: fallback.currentPage ?? page,
+          totalPages: fallback.totalPages ?? 1,
+          totalCount: fallback.totalCount ?? ordersData.length,
+          hasNextPage: fallback.hasNextPage ?? (page < (fallback.totalPages ?? 1)),
+          hasPrevPage: fallback.hasPrevPage ?? (page > 1)
+        });
+      } catch (e2) {
+        console.error('Error fetching orders:', error);
+        toast({
+          title: 'خطأ في تحميل الطلبات',
+          description: 'حدث خطأ أثناء تحميل الطلبات',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -161,21 +199,20 @@ const OrdersCollector: React.FC = () => {
         getPharmacies()
       ]);
       
-      const salesRepOptions = Array.isArray(salesRepsResponse.data)
-        ? salesRepsResponse.data.map((rep: any) => ({
-            value: `${rep.firstName} ${rep.lastName}`.trim(),
-            label: `${rep.firstName} ${rep.lastName}`.trim()
-          }))
+      const repNamesRaw = Array.isArray(salesRepsResponse.data)
+        ? salesRepsResponse.data.map((rep: any) => {
+            const full = [rep.firstName, rep.lastName].filter(Boolean).join(' ').trim();
+            return full || rep.username || rep.name || rep.email || '';
+          })
         : [];
-      setSalesReps(salesRepOptions);
+      const repNames = Array.from(new Set(repNamesRaw.filter(Boolean))).sort();
+      setSalesReps(repNames.map((n: string) => ({ value: n, label: n })));
 
-      const pharmacyOptions = Array.isArray(pharmaciesResponse.data)
-        ? pharmaciesResponse.data.map((ph: any) => ({
-            value: ph.customerSystemDescription,
-            label: ph.customerSystemDescription
-          }))
+      const pharmacyNamesRaw = Array.isArray(pharmaciesResponse.data)
+        ? pharmaciesResponse.data.map((ph: any) => ph.customerSystemDescription || ph.name || ph.pharmacyName || '')
         : [];
-      setPharmacies(pharmacyOptions);
+      const pharmacyNames = Array.from(new Set(pharmacyNamesRaw.filter(Boolean))).sort();
+      setPharmacies(pharmacyNames.map((n: string) => ({ value: n, label: n })));
     } catch (error) {
       console.error('Error fetching filter data:', error);
     }
