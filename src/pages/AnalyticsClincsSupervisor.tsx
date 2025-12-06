@@ -88,7 +88,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState('daily');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageLimit] = useState(50);
+  const [pageLimit, setPageLimit] = useState(50);
   const [exportLoading, setExportLoading] = useState(false);
 
   // Process raw API data to display format
@@ -162,7 +162,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
   // Load data on component mount and when filters change
   useEffect(() => {
     fetchVisitsData();
-  }, [supervisorId, currentPage, fromDate, toDate]);
+  }, [supervisorId, currentPage, pageLimit, fromDate, toDate]);
 
   // Apply local filters (for immediate UI response)
   useEffect(() => {
@@ -202,16 +202,18 @@ const AnalyticsClincsSupervisor: React.FC = () => {
     if (fromDate) {
       filtered = filtered.filter(visit => {
         const visitDate = new Date(visit.visitDateISO);
-        const filterDate = new Date(fromDate);
-        return visitDate >= filterDate;
+        const start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+        return visitDate >= start;
       });
     }
     
     if (toDate) {
       filtered = filtered.filter(visit => {
         const visitDate = new Date(visit.visitDateISO);
-        const filterDate = new Date(toDate);
-        return visitDate <= filterDate;
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        return visitDate <= end;
       });
     }
 
@@ -236,6 +238,24 @@ const AnalyticsClincsSupervisor: React.FC = () => {
     setSelectedPeriod('daily');
     setCurrentPage(1);
     toast.success('تم مسح جميع الفلاتر');
+  };
+
+  const handlePrevPage = () => {
+    if (analyticsData?.pagination?.hasPrevPage) {
+      setCurrentPage((p) => Math.max(1, p - 1));
+    }
+  };
+
+  const handleNextPage = () => {
+    if (analyticsData?.pagination?.hasNextPage) {
+      setCurrentPage((p) => p + 1);
+    }
+  };
+
+  const handleLimitChange = (value: string) => {
+    const newLimit = parseInt(value, 10);
+    setPageLimit(newLimit);
+    setCurrentPage(1);
   };
 
   // Export visits to Excel
@@ -1691,6 +1711,32 @@ const AnalyticsClincsSupervisor: React.FC = () => {
                 )}
               </tbody>
             </table>
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-3">
+              <div className="text-sm text-gray-600">
+                الصفحة {analyticsData?.pagination?.currentPage || currentPage} من {analyticsData?.pagination?.totalPages || 1}
+              </div>
+              <div className="flex items-center gap-3">
+                <Select value={String(pageLimit)} onValueChange={handleLimitChange}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder="عدد السجلات" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={!analyticsData?.pagination?.hasPrevPage}>
+                    السابق
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleNextPage} disabled={!analyticsData?.pagination?.hasNextPage}>
+                    التالي
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
