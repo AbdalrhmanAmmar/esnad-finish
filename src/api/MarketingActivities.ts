@@ -1,15 +1,15 @@
-import api from './api';
+import api from "./api";
 
 // إنشاء نشاط تسويقي جديد
 export const createMarketingActivity = async (english: string, arabic: string) => {
   try {
-    const response = await api.post('/marketing-activities', {
+    const response = await api.post("/marketing-activities", {
       english,
-      arabic
+      arabic,
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء إنشاء النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء إنشاء النشاط التسويقي");
   }
 };
 
@@ -23,7 +23,7 @@ export const getAllMarketingActivities = async (
   try {
     const params: any = {
       page,
-      limit
+      limit,
     };
 
     if (search) {
@@ -34,10 +34,10 @@ export const getAllMarketingActivities = async (
       params.isActive = isActive;
     }
 
-    const response = await api.get('/marketing-activities', { params });
+    const response = await api.get("/marketing-activities", { params });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء جلب الأنشطة التسويقية');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء جلب الأنشطة التسويقية");
   }
 };
 
@@ -45,16 +45,16 @@ export const getAllMarketingActivities = async (
 export const importMarketingActivitiesFile = async (file: File) => {
   try {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    const response = await api.post('/marketing-activities/import', formData, {
+    const response = await api.post("/marketing-activities/import", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء رفع الملف');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء رفع الملف");
   }
 };
 
@@ -66,23 +66,23 @@ export const exportMarketingActivitiesToExcel = async (isActive?: boolean) => {
       params.isActive = isActive;
     }
 
-    const response = await api.get('/marketing-activities/export-excel', {
+    const response = await api.get("/marketing-activities/export-excel", {
       params,
-      responseType: 'blob'
+      responseType: "blob",
     });
 
     // إنشاء رابط التحميل
     const blob = new Blob([response.data], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-    
+
     const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    
-    const filename = `marketing-activities-${new Date().toISOString().split('T')[0]}.xlsx`;
-    link.setAttribute('download', filename);
-    
+
+    const filename = `marketing-activities-${new Date().toISOString().split("T")[0]}.xlsx`;
+    link.setAttribute("download", filename);
+
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -90,10 +90,10 @@ export const exportMarketingActivitiesToExcel = async (isActive?: boolean) => {
 
     return {
       success: true,
-      message: 'تم تصدير البيانات بنجاح'
+      message: "تم تصدير البيانات بنجاح",
     };
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء تصدير البيانات');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء تصدير البيانات");
   }
 };
 
@@ -108,11 +108,11 @@ export const updateMarketingActivity = async (
     const response = await api.put(`/marketing-activities/${id}`, {
       english,
       arabic,
-      isActive
+      isActive,
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء تحديث النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء تحديث النشاط التسويقي");
   }
 };
 
@@ -122,28 +122,11 @@ export const deleteMarketingActivity = async (id: string) => {
     const response = await api.delete(`/marketing-activities/${id}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء حذف النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء حذف النشاط التسويقي");
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//form 
-
+//form
 
 // جلب نشاط تسويقي واحد
 export const getMarketingActivityById = async (id: string) => {
@@ -151,7 +134,7 @@ export const getMarketingActivityById = async (id: string) => {
     const response = await api.get(`/marketing-activities/${id}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء جلب النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء جلب النشاط التسويقي");
   }
 };
 
@@ -169,16 +152,16 @@ export interface MarketingActivityRequest {
 // إنشاء طلب نشاط تسويقي جديد
 export const createMarketingActivityRequest = async (requestData: MarketingActivityRequest) => {
   try {
-    const response = await api.post('/marketing-activity-requests', {
+    const response = await api.post("/marketing-activity-requests", {
       activityDate: requestData.activityDate,
       activityType: requestData.activityType,
       doctor: requestData.doctor,
       cost: requestData.cost,
-      notes: requestData.notes || ''
+      notes: requestData.notes || "",
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء إنشاء طلب النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء إنشاء طلب النشاط التسويقي");
   }
 };
 
@@ -191,17 +174,17 @@ export const getAllMarketingActivityRequests = async (
   try {
     const params: any = {
       page,
-      limit
+      limit,
     };
 
     if (status) {
       params.status = status;
     }
 
-    const response = await api.get('/marketing-activity-requests', { params });
+    const response = await api.get("/marketing-activity-requests", { params });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء جلب طلبات الأنشطة التسويقية');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء جلب طلبات الأنشطة التسويقية");
   }
 };
 
@@ -211,24 +194,24 @@ export const getMarketingActivityRequestById = async (id: string) => {
     const response = await api.get(`/marketing-activity-requests/${id}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء جلب طلب النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء جلب طلب النشاط التسويقي");
   }
 };
 
 // تحديث حالة طلب النشاط التسويقي (للمشرف/الأدمن)
 export const updateMarketingActivityRequestStatus = async (
   id: string,
-  status: 'PENDING' | 'APPROVED' | 'REJECTED',
+  status: "PENDING" | "APPROVED" | "REJECTED",
   notes?: string
 ) => {
   try {
     const response = await api.put(`/marketing-activity-requests//${id}/status`, {
       status,
-      notes
+      notes,
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء تحديث حالة الطلب');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء تحديث حالة الطلب");
   }
 };
 
@@ -238,7 +221,7 @@ export const deleteMarketingActivityRequest = async (id: string) => {
     const response = await api.delete(`/marketing-activity-requests/${id}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء حذف طلب النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء حذف طلب النشاط التسويقي");
   }
 };
 
@@ -266,7 +249,7 @@ export interface SupervisorMarketingActivityRequest {
     firstName: string;
     lastName: string;
   };
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   requestDate: string;
   createdAt: string;
   updatedAt: string;
@@ -302,7 +285,7 @@ export interface SupervisorMarketingActivityRequestsResponse {
 export interface GetSupervisorMarketingActivityRequestsParams {
   page?: number;
   limit?: number;
-  status?: 'pending' | 'approved' | 'rejected';
+  status?: "pending" | "approved" | "rejected";
   startDate?: string;
   endDate?: string;
   search?: string;
@@ -315,74 +298,74 @@ export const getSupervisorMarketingActivityRequests = async (
 ): Promise<SupervisorMarketingActivityRequestsResponse> => {
   try {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
 
-    const url = `/marketing-activity-requests/supervisor/${supervisorId}/requests${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `/marketing-activity-requests/supervisor/${supervisorId}/requests${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
     const response = await api.get(url);
     return response.data;
   } catch (error: any) {
-    console.error('Error fetching supervisor marketing activity requests:', error);
-    throw new Error(error.response?.data?.message || 'فشل في جلب طلبات الأنشطة التسويقية');
+    console.error("Error fetching supervisor marketing activity requests:", error);
+    throw new Error(error.response?.data?.message || "فشل في جلب طلبات الأنشطة التسويقية");
   }
 };
 
 // تحديث حالة طلب النشاط التسويقي (للمشرف)
 export const updateSupervisorMarketingActivityRequestStatus = async (
   requestId: string,
-  status: 'pending' | 'approved' | 'rejected'
+  status: "pending" | "approved" | "rejected"
 ): Promise<{ success: boolean; message: string; data: SupervisorMarketingActivityRequest }> => {
   try {
-    const response = await api.patch(`/marketing-activity-requests/supervisor/status/${requestId}`, {
-      status
-    });
+    const response = await api.patch(
+      `/marketing-activity-requests/supervisor/status/${requestId}`,
+      {
+        status,
+      }
+    );
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء تحديث حالة الطلب');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء تحديث حالة الطلب");
   }
 };
 
 // تصدير طلبات الأنشطة التسويقية إلى Excel
 export const exportMarketingActivityRequests = async (
-  supervisorId: string,
+  userId: string,
   params?: {
     startDate?: string;
     endDate?: string;
-    status?: 'pending' | 'approved' | 'rejected' | 'all';
+    status?: "pending" | "approved" | "rejected" | "all";
   }
 ): Promise<Blob> => {
   try {
     const queryParams = new URLSearchParams();
-    
+
     if (params?.startDate) {
-      queryParams.append('startDate', params.startDate);
+      queryParams.append("startDate", params.startDate);
     }
     if (params?.endDate) {
-      queryParams.append('endDate', params.endDate);
+      queryParams.append("endDate", params.endDate);
     }
-    if (params?.status && params.status !== 'all') {
-      queryParams.append('status', params.status);
+    if (params?.status && params.status !== "all") {
+      queryParams.append("status", params.status);
     }
 
-    const response = await api.get(
-      `/marketing-activity-requests/export/${supervisorId}?${queryParams.toString()}`,
-      {
-        responseType: 'blob'
-      }
-    );
-    
+    const response = await api.get(`/marketing-activity-requests/export/${userId}`, {
+      responseType: "blob",
+    });
+
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء تصدير البيانات');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء تصدير البيانات");
   }
 };
-
-
 
 // ===== طلبات الأنشطة التسويقية حسب UserId =====
 
@@ -423,7 +406,7 @@ export interface UserMarketingActivityRequest {
     email?: string;
     role?: string;
   };
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   requestDate: string;
   createdAt?: string;
   updatedAt?: string;
@@ -468,7 +451,7 @@ export interface UserMarketingActivityRequestsResponse {
 export interface GetUserMarketingActivityRequestsParams {
   page?: number;
   limit?: number;
-  status?: 'pending' | 'approved' | 'rejected' | 'all';
+  status?: "pending" | "approved" | "rejected" | "all";
   activityType?: string;
   doctor?: string;
   startDate?: string;
@@ -483,75 +466,79 @@ export const getMarketingActivityRequestsByUserId = async (
 ): Promise<UserMarketingActivityRequestsResponse> => {
   try {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.status && params.status !== 'all') queryParams.append('status', params.status);
-    if (params?.activityType) queryParams.append('activityType', params.activityType);
-    if (params?.doctor) queryParams.append('doctor', params.doctor);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
 
-    const url = `/marketing-activity-requests/user/${userId}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.status && params.status !== "all") queryParams.append("status", params.status);
+    if (params?.activityType) queryParams.append("activityType", params.activityType);
+    if (params?.doctor) queryParams.append("doctor", params.doctor);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `/marketing-activity-requests/user/${userId}${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
     const response = await api.get(url);
     return response.data;
   } catch (error: any) {
-    console.error('Error fetching user marketing activity requests:', error);
-    throw new Error(error.response?.data?.message || 'فشل في جلب طلبات الأنشطة التسويقية للمستخدم');
+    console.error("Error fetching user marketing activity requests:", error);
+    throw new Error(error.response?.data?.message || "فشل في جلب طلبات الأنشطة التسويقية للمستخدم");
   }
 };
 
 // Export user marketing activity requests to Excel
 export const exportUserMarketingActivityRequestsToExcel = async (
   userId: string,
-  params?: Omit<GetUserMarketingActivityRequestsParams, 'page' | 'limit'>
+  params?: Omit<GetUserMarketingActivityRequestsParams, "page" | "limit">
 ): Promise<Blob> => {
   try {
     const queryParams = new URLSearchParams();
-    
-    if (params?.status && params.status !== 'all') queryParams.append('status', params.status);
-    if (params?.activityType) queryParams.append('activityType', params.activityType);
-    if (params?.doctor) queryParams.append('doctor', params.doctor);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
 
-    const url = `/marketing-activity-requests/user/${userId}/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    const response = await api.get(url, { responseType: 'blob' });
+    if (params?.status && params.status !== "all") queryParams.append("status", params.status);
+    if (params?.activityType) queryParams.append("activityType", params.activityType);
+    if (params?.doctor) queryParams.append("doctor", params.doctor);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `/marketing-activity-requests/user/${userId}/export${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
+    const response = await api.get(url, { responseType: "blob" });
     return response.data;
   } catch (error: any) {
-    console.error('Error exporting user marketing activity requests:', error);
-    throw new Error(error.response?.data?.message || 'فشل في تصدير طلبات الأنشطة التسويقية');
+    console.error("Error exporting user marketing activity requests:", error);
+    throw new Error(error.response?.data?.message || "فشل في تصدير طلبات الأنشطة التسويقية");
   }
 };
 
 // Update marketing activity request status for user
 export const updateUserMarketingActivityRequestStatus = async (
   requestId: string,
-  status: 'pending' | 'approved' | 'rejected',
+  status: "pending" | "approved" | "rejected",
   notes?: string
 ): Promise<{ success: boolean; message: string; data: UserMarketingActivityRequest }> => {
   try {
     const response = await api.put(`/marketing-activity-requests/${requestId}`, {
       status,
-      notes
+      notes,
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء تحديث حالة الطلب');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء تحديث حالة الطلب");
   }
 };
 
 // Create marketing activity request for user
 export const createUserMarketingActivityRequest = async (
-  requestData: Omit<MarketingActivityRequest, 'status'>
+  requestData: Omit<MarketingActivityRequest, "status">
 ): Promise<{ success: boolean; message: string; data: UserMarketingActivityRequest }> => {
   try {
-    const response = await api.post('/marketing-activity-requests', requestData);
+    const response = await api.post("/marketing-activity-requests", requestData);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء إنشاء طلب النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء إنشاء طلب النشاط التسويقي");
   }
 };
 
@@ -563,7 +550,7 @@ export const deleteUserMarketingActivityRequest = async (
     const response = await api.delete(`/marketing-activity-requests/${requestId}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء حذف طلب النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء حذف طلب النشاط التسويقي");
   }
 };
 
@@ -575,6 +562,6 @@ export const getUserMarketingActivityRequestById = async (
     const response = await api.get(`/marketing-activity-requests/${requestId}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'فشل في جلب تفاصيل طلب النشاط التسويقي');
+    throw new Error(error.response?.data?.message || "فشل في جلب تفاصيل طلب النشاط التسويقي");
   }
 };
