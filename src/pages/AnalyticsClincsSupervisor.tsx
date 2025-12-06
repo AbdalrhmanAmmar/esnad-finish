@@ -23,7 +23,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { TrendingUp, Users, Activity, DollarSign, Download, Calendar, Building2, Stethoscope, Filter, RefreshCw, Tag, Package, User, Trophy, BarChart3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { getVisitsBySupervisor, SupervisorVisit, SupervisorVisitsResponse, GetVisitsBySupervisorParams } from '@/api/Visits';
+import { getVisitsBySupervisor, SupervisorVisit, SupervisorVisitsResponse, GetVisitsBySupervisorParams, exportSupervisorVisitsToExcel } from '@/api/Visits';
 import { useAuthStore } from '@/stores/authStore';
 
 // Register Chart.js components
@@ -242,45 +242,29 @@ const AnalyticsClincsSupervisor: React.FC = () => {
   const handleExportToExcel = async () => {
     try {
       setExportLoading(true);
-      
-      // Create CSV content from filtered visits
-      const csvContent = [
-        // Header row
-        ['التاريخ', 'الطبيب', 'العيادة', 'الشريحة', 'التخصص', 'المنتجات', 'عدد العينات', 'المندوب'].join(','),
-        // Data rows
-        ...filteredVisits.map(visit => [
-          visit.visitDate,
-          visit.doctorName,
-          visit.clinicName,
-          visit.classification,
-          visit.specialty,
-          visit.products.join('; '),
-          visit.samplesCount,
-          visit.medicalRepName
-        ].join(','))
-      ].join('\n');
-      
-      // Create and download file
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const params: GetVisitsBySupervisorParams = {
+        startDate: fromDate || undefined,
+        endDate: toDate || undefined,
+        doctorName: selectedDoctor !== 'all' ? selectedDoctor : undefined,
+        medicalRepName: selectedMedicalRep !== 'all' ? selectedMedicalRep : undefined,
+        sortBy: 'visitDate',
+        sortOrder: 'desc'
+      };
+      const blob = await exportSupervisorVisitsToExcel(supervisorId, params);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      
-      // Generate filename with current date
       const currentDate = new Date().toISOString().split('T')[0];
-      const dateRange = fromDate && toDate ? `_${fromDate}_to_${toDate}` : `_${currentDate}`;
-      link.download = `visits_report${dateRange}.csv`;
-      
-      // Trigger download
+      const dateRange = fromDate && toDate ? `${fromDate}_to_${toDate}` : currentDate;
+      link.download = `supervisor_visits_${dateRange}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
       toast.success('تم تصدير التقرير بنجاح');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Export error:', error);
-      toast.error('حدث خطأ أثناء تصدير التقرير');
+      toast.error(error.message || 'حدث خطأ أثناء تصدير التقرير');
     } finally {
       setExportLoading(false);
     }
@@ -628,7 +612,7 @@ const AnalyticsClincsSupervisor: React.FC = () => {
             className="gap-2"
           >
             <Download className={`h-4 w-4 ${exportLoading ? 'animate-spin' : ''}`} />
-            {exportLoading ? 'جاري التصدير...' : 'تصدير إلى CSV'}
+            {exportLoading ? 'جاري التصدير...' : 'تصدير Excel'}
           </Button>
         </div>
       </div>

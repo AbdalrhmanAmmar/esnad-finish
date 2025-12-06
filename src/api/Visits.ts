@@ -385,6 +385,23 @@ export const getVisitsBySupervisor = async (
   return response.data;
 };
 
+export const exportSupervisorVisitsToExcel = async (
+  supervisorId: string,
+  params?: GetVisitsBySupervisorParams
+): Promise<Blob> => {
+  const queryParams = new URLSearchParams();
+  if (params?.startDate) queryParams.append('startDate', params.startDate);
+  if (params?.endDate) queryParams.append('endDate', params.endDate);
+  if (params?.doctorName) queryParams.append('doctorName', params.doctorName);
+  if (params?.medicalRepName) queryParams.append('medicalRepName', params.medicalRepName);
+  if (params?.withSupervisor !== undefined) queryParams.append('withSupervisor', String(params.withSupervisor));
+  if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+  if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+  const url = `/visit-forms/supervisor/${supervisorId}/export-excel${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  const response = await api.get(url, { responseType: 'blob' });
+  return response.data;
+};
+
 // Visit Analytics Interfaces
 export interface VisitAnalyticsData {
   visitsByDay: Array<{ day: string; label: string; visits: number; percentage: number }>;
