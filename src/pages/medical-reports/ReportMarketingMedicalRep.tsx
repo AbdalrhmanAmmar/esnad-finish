@@ -15,7 +15,7 @@ import {
   getMarketingActivityRequestsByUserId, 
   UserMarketingActivityRequest, 
   UserMarketingActivityRequestsResponse,
-  exportMarketingActivityRequestsToExcel,
+  exportMedicalRepMarketingRequests,
   GetUserMarketingActivityRequestsParams
 } from '@/api/MarketingActivityRequest';
 import {
@@ -147,7 +147,12 @@ const ReportMarketingMedicalRep: React.FC = () => {
         activityType: filters.activityType || undefined,
       };
       
-      const blob = await exportMarketingActivityRequestsToExcel(user._id, exportParams);
+      const blob = await exportMedicalRepMarketingRequests({
+        medicalRepId: user._id,
+        startDate: exportParams.startDate,
+        endDate: exportParams.endDate,
+        status: exportParams.status ?? 'all'
+      });
       
       // Create download link
       const url = window.URL.createObjectURL(blob);

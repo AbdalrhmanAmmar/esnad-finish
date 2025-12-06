@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,20 +12,44 @@ import {
   ArcElement,
   BarElement,
   Filler,
-} from 'chart.js';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingUp, Users, Activity, DollarSign, Download, Calendar, Building2, Stethoscope, Filter, RefreshCw, Tag, Package, User } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { getDetailedVisits, DetailedVisit, DetailedVisitsResponse, DetailedVisitsParams, exportVisitsToExcel } from '@/api/Visits';
-import { useAuthStore } from '@/stores/authStore';
-
-
+} from "chart.js";
+import { Line, Doughnut, Bar } from "react-chartjs-2";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  TrendingUp,
+  Users,
+  Activity,
+  DollarSign,
+  Download,
+  Calendar,
+  Building2,
+  Stethoscope,
+  Filter,
+  RefreshCw,
+  Tag,
+  Package,
+  User,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import {
+  getDetailedVisits,
+  DetailedVisit,
+  DetailedVisitsResponse,
+  DetailedVisitsParams,
+  exportVisitsToExcel,
+} from "@/api/Visits";
+import { useAuthStore } from "@/stores/authStore";
 
 // Register Chart.js components
 ChartJS.register(
@@ -67,38 +91,70 @@ const mockAnalyticsData = {
     activeClinic: 45,
     avgVisitsPerDay: 23.7,
     growthRate: 12.5,
-    satisfactionRate: 94.2
+    satisfactionRate: 94.2,
   },
   monthlyTrends: {
-    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
+    labels: [
+      "يناير",
+      "فبراير",
+      "مارس",
+      "أبريل",
+      "مايو",
+      "يونيو",
+      "يوليو",
+      "أغسطس",
+      "سبتمبر",
+      "أكتوبر",
+      "نوفمبر",
+      "ديسمبر",
+    ],
     visits: [180, 220, 195, 267, 289, 312, 298, 345, 378, 392, 415, 428],
-    revenue: [8500, 11200, 9800, 13400, 14500, 15600, 14900, 17250, 18900, 19600, 20750, 21400]
+    revenue: [8500, 11200, 9800, 13400, 14500, 15600, 14900, 17250, 18900, 19600, 20750, 21400],
   },
   specialtyDistribution: {
-    labels: ['طب الأطفال', 'طب الباطنة', 'طب الأسنان', 'طب العيون', 'طب الجلدية', 'طب النساء', 'طب العظام'],
-    data: [25, 20, 18, 12, 10, 8, 7]
+    labels: [
+      "طب الأطفال",
+      "طب الباطنة",
+      "طب الأسنان",
+      "طب العيون",
+      "طب الجلدية",
+      "طب النساء",
+      "طب العظام",
+    ],
+    data: [25, 20, 18, 12, 10, 8, 7],
   },
   clinicComparison: {
-    labels: ['عيادة النور', 'عيادة الشفاء', 'عيادة الأمل', 'عيادة السلام', 'عيادة الحياة'],
+    labels: ["عيادة النور", "عيادة الشفاء", "عيادة الأمل", "عيادة السلام", "عيادة الحياة"],
     visits: [450, 380, 320, 290, 250],
-    revenue: [22500, 19000, 16000, 14500, 12500]
+    revenue: [22500, 19000, 16000, 14500, 12500],
   },
   productPerformance: {
-    labels: ['المنتج الأول', 'المنتج الثاني', 'المنتج الثالث', 'المنتج الرابع', 'المنتج الخامس'],
+    labels: ["المنتج الأول", "المنتج الثاني", "المنتج الثالث", "المنتج الرابع", "المنتج الخامس"],
     sales: [85, 72, 68, 45, 38],
-    satisfaction: [92, 88, 85, 78, 75]
+    satisfaction: [92, 88, 85, 78, 75],
   },
   timeAnalysis: {
-    labels: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'],
-    visits: [12, 25, 35, 42, 38, 28, 45, 52, 38, 22]
-  }
+    labels: [
+      "8:00",
+      "9:00",
+      "10:00",
+      "11:00",
+      "12:00",
+      "13:00",
+      "14:00",
+      "15:00",
+      "16:00",
+      "17:00",
+    ],
+    visits: [12, 25, 35, 42, 38, 28, 45, 52, 38, 22],
+  },
 };
 
 const ClinicsAnalytics: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore();
   const id = user.user?._id;
-  
+
   // Data states
   const [visits, setVisits] = useState<ProcessedVisit[]>([]);
   const [filteredVisits, setFilteredVisits] = useState<ProcessedVisit[]>([]);
@@ -106,49 +162,49 @@ const ClinicsAnalytics: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const [medicalRepId, setMedicalRepId] = useState(id); // Default medical rep ID
-  
+
   // Filter states
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [selectedDoctor, setSelectedDoctor] = useState('all');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('all');
-  const [selectedSegment, setSelectedSegment] = useState('all');
-  const [selectedBrand, setSelectedBrand] = useState('all');
-  const [selectedClinic, setSelectedClinic] = useState('all');
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [selectedDoctor, setSelectedDoctor] = useState("all");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("all");
+  const [selectedSegment, setSelectedSegment] = useState("all");
+  const [selectedBrand, setSelectedBrand] = useState("all");
+  const [selectedClinic, setSelectedClinic] = useState("all");
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [selectedPeriod, setSelectedPeriod] = useState('daily');
+  const [selectedPeriod, setSelectedPeriod] = useState("daily");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageLimit] = useState(50);
   const [exportLoading, setExportLoading] = useState(false);
 
   // Process raw API data to display format
   const processVisitsData = (rawVisits: DetailedVisit[]): ProcessedVisit[] => {
-    return rawVisits.map(visit => ({
+    return rawVisits.map((visit) => ({
       _id: visit._id,
-      visitDate: new Date(visit.visitDate).toLocaleDateString('ar-SA', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric', 
-        calendar: 'gregory' 
+      visitDate: new Date(visit.visitDate).toLocaleDateString("ar-SA", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        calendar: "gregory",
       }),
       doctorName: visit.doctorId.drName,
       specialty: visit.doctorId.specialty,
       clinicName: visit.doctorId.organizationName,
       classification: visit.doctorId.segment,
       brand: visit.doctorId.brand,
-      products: visit.products.map(p => p.productId?.PRODUCT || 'غير محدد'),
+      products: visit.products.map((p) => p.productId?.PRODUCT || "غير محدد"),
       samplesCount: visit.products.reduce((sum, p) => sum + p.samplesCount, 0),
       notes: visit.notes,
       medicalRepName: `${visit.medicalRepId.firstName} ${visit.medicalRepId.lastName}`,
       teamArea: visit.medicalRepId.teamArea,
       teamProducts: visit.medicalRepId.teamProducts,
-      doctorId: visit.doctorId._id // إضافة معرف الطبيب
+      doctorId: visit.doctorId._id, // إضافة معرف الطبيب
     }));
   };
 
   // Get unique values for filters from all data (not filtered data)
   const [allVisits, setAllVisits] = useState<ProcessedVisit[]>([]);
-  
+
   // Store all visits separately to keep filters stable
   useEffect(() => {
     if (visits.length > 0 && allVisits.length === 0) {
@@ -156,12 +212,24 @@ const ClinicsAnalytics: React.FC = () => {
     }
   }, [visits]);
 
-  const uniqueDoctors = [...new Set(allVisits.map(visit => visit.doctorName).filter(v => v && v.trim() !== ''))];
-  const uniqueSpecialties = [...new Set(allVisits.map(visit => visit.specialty).filter(v => v && v.trim() !== ''))];
-  const uniqueSegments = [...new Set(allVisits.map(visit => visit.classification).filter(v => v && v.trim() !== ''))];
-  const uniqueBrands = [...new Set(allVisits.map(visit => visit.brand).filter(v => v && v.trim() !== ''))];
-  const uniqueClinics = [...new Set(allVisits.map(visit => visit.clinicName).filter(v => v && v.trim() !== ''))];
-  const uniqueProducts = [...new Set(allVisits.flatMap(visit => visit.products).filter(v => v && v.trim() !== ''))];
+  const uniqueDoctors = [
+    ...new Set(allVisits.map((visit) => visit.doctorName).filter((v) => v && v.trim() !== "")),
+  ];
+  const uniqueSpecialties = [
+    ...new Set(allVisits.map((visit) => visit.specialty).filter((v) => v && v.trim() !== "")),
+  ];
+  const uniqueSegments = [
+    ...new Set(allVisits.map((visit) => visit.classification).filter((v) => v && v.trim() !== "")),
+  ];
+  const uniqueBrands = [
+    ...new Set(allVisits.map((visit) => visit.brand).filter((v) => v && v.trim() !== "")),
+  ];
+  const uniqueClinics = [
+    ...new Set(allVisits.map((visit) => visit.clinicName).filter((v) => v && v.trim() !== "")),
+  ];
+  const uniqueProducts = [
+    ...new Set(allVisits.flatMap((visit) => visit.products).filter((v) => v && v.trim() !== "")),
+  ];
 
   // Fetch data from API
   const fetchVisitsData = async () => {
@@ -172,16 +240,16 @@ const ClinicsAnalytics: React.FC = () => {
         limit: pageLimit,
         startDate: fromDate || undefined,
         endDate: toDate || undefined,
-        doctorName: selectedDoctor !== 'all' ? selectedDoctor : undefined,
-        specialization: selectedSpecialty !== 'all' ? selectedSpecialty : undefined,
-        segment: selectedSegment !== 'all' ? selectedSegment : undefined,
-        clinic: selectedClinic !== 'all' ? selectedClinic : undefined,
-        brand: selectedBrand !== 'all' ? selectedBrand : undefined,
-        products: selectedProducts.length > 0 ? selectedProducts : undefined
+        doctorName: selectedDoctor !== "all" ? selectedDoctor : undefined,
+        specialization: selectedSpecialty !== "all" ? selectedSpecialty : undefined,
+        segment: selectedSegment !== "all" ? selectedSegment : undefined,
+        clinic: selectedClinic !== "all" ? selectedClinic : undefined,
+        brand: selectedBrand !== "all" ? selectedBrand : undefined,
+        products: selectedProducts.length > 0 ? selectedProducts : undefined,
       };
 
       const response = await getDetailedVisits(medicalRepId, params);
-      console.log(response.data, "response")
+      console.log(response.data, "response");
       if (response.success && response.data) {
         setAnalyticsData(response.data);
         const processedVisits = processVisitsData(response.data.visits);
@@ -189,7 +257,7 @@ const ClinicsAnalytics: React.FC = () => {
         setFilteredVisits(processedVisits);
       }
     } catch (error: any) {
-      toast.error(error.message || 'حدث خطأ أثناء جلب البيانات');
+      toast.error(error.message || "حدث خطأ أثناء جلب البيانات");
     } finally {
       setLoading(false);
     }
@@ -198,7 +266,18 @@ const ClinicsAnalytics: React.FC = () => {
   // Load data on component mount and when filters change
   useEffect(() => {
     fetchVisitsData();
-  }, [medicalRepId, currentPage, fromDate, toDate, selectedDoctor, selectedSpecialty, selectedSegment, selectedBrand, selectedClinic, selectedProducts]);
+  }, [
+    medicalRepId,
+    currentPage,
+    fromDate,
+    toDate,
+    selectedDoctor,
+    selectedSpecialty,
+    selectedSegment,
+    selectedBrand,
+    selectedClinic,
+    selectedProducts,
+  ]);
 
   // Apply local filters (for immediate UI response)
   useEffect(() => {
@@ -210,61 +289,61 @@ const ClinicsAnalytics: React.FC = () => {
 
   const handleRefresh = () => {
     fetchVisitsData();
-    toast.success('تم تحديث البيانات بنجاح');
+    toast.success("تم تحديث البيانات بنجاح");
   };
 
   const clearFilters = () => {
-    setFromDate('');
-    setToDate('');
-    setSelectedDoctor('all');
-    setSelectedSpecialty('all');
-    setSelectedSegment('all');
-    setSelectedBrand('all');
-    setSelectedClinic('all');
+    setFromDate("");
+    setToDate("");
+    setSelectedDoctor("all");
+    setSelectedSpecialty("all");
+    setSelectedSegment("all");
+    setSelectedBrand("all");
+    setSelectedClinic("all");
     setSelectedProducts([]);
-    setSelectedPeriod('daily');
+    setSelectedPeriod("daily");
     setCurrentPage(1);
-    toast.success('تم مسح جميع الفلاتر');
+    toast.success("تم مسح جميع الفلاتر");
   };
 
   // Export visits to Excel
   const handleExportToExcel = async () => {
     try {
       setExportLoading(true);
-      
+
       const params: DetailedVisitsParams = {
         startDate: fromDate || undefined,
         endDate: toDate || undefined,
-        doctorName: selectedDoctor !== 'all' ? selectedDoctor : undefined,
-        specialization: selectedSpecialty !== 'all' ? selectedSpecialty : undefined,
-        segment: selectedSegment !== 'all' ? selectedSegment : undefined,
-        clinic: selectedClinic !== 'all' ? selectedClinic : undefined,
-        brand: selectedBrand !== 'all' ? selectedBrand : undefined,
-        products: selectedProducts.length > 0 ? selectedProducts : undefined
+        doctorName: selectedDoctor !== "all" ? selectedDoctor : undefined,
+        specialization: selectedSpecialty !== "all" ? selectedSpecialty : undefined,
+        segment: selectedSegment !== "all" ? selectedSegment : undefined,
+        clinic: selectedClinic !== "all" ? selectedClinic : undefined,
+        brand: selectedBrand !== "all" ? selectedBrand : undefined,
+        products: selectedProducts.length > 0 ? selectedProducts : undefined,
       };
 
       const blob = await exportVisitsToExcel(medicalRepId, params);
-      
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      
+
       // Generate filename with current date
-      const currentDate = new Date().toISOString().split('T')[0];
+      const currentDate = new Date().toISOString().split("T")[0];
       const dateRange = fromDate && toDate ? `_${fromDate}_to_${toDate}` : `_${currentDate}`;
       link.download = `visits_report${dateRange}.xlsx`;
-      
+
       // Trigger download
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
-      toast.success('تم تصدير التقرير بنجاح');
+
+      toast.success("تم تصدير التقرير بنجاح");
     } catch (error) {
-      console.error('Export error:', error);
-      toast.error('حدث خطأ أثناء تصدير التقرير');
+      console.error("Export error:", error);
+      toast.error("حدث خطأ أثناء تصدير التقرير");
     } finally {
       setExportLoading(false);
     }
@@ -272,25 +351,28 @@ const ClinicsAnalytics: React.FC = () => {
 
   // Calculate product performance from real data
   const productPerformanceData = () => {
-    const productStats = uniqueProducts.map(product => {
-      const productVisits = visits.filter(visit => visit.products.includes(product));
-      const totalSamples = productVisits.reduce((sum, visit) => sum + visit.samplesCount, 0);
-      const avgSamples = productVisits.length > 0 ? Math.round(totalSamples / productVisits.length) : 0;
-      const satisfaction = Math.min(95, Math.max(70, 75 + Math.random() * 20)); // تقدير رضا العملاء
-      
-      return {
-        product,
-        visits: productVisits.length,
-        samples: totalSamples,
-        avgSamples,
-        satisfaction: Math.round(satisfaction)
-      };
-    }).sort((a, b) => b.samples - a.samples);
-    
+    const productStats = uniqueProducts
+      .map((product) => {
+        const productVisits = visits.filter((visit) => visit.products.includes(product));
+        const totalSamples = productVisits.reduce((sum, visit) => sum + visit.samplesCount, 0);
+        const avgSamples =
+          productVisits.length > 0 ? Math.round(totalSamples / productVisits.length) : 0;
+        const satisfaction = Math.min(95, Math.max(70, 75 + Math.random() * 20)); // تقدير رضا العملاء
+
+        return {
+          product,
+          visits: productVisits.length,
+          samples: totalSamples,
+          avgSamples,
+          satisfaction: Math.round(satisfaction),
+        };
+      })
+      .sort((a, b) => b.samples - a.samples);
+
     return {
-      labels: productStats.map(p => p.product),
-      sales: productStats.map(p => p.avgSamples),
-      satisfaction: productStats.map(p => p.satisfaction)
+      labels: productStats.map((p) => p.product),
+      sales: productStats.map((p) => p.avgSamples),
+      satisfaction: productStats.map((p) => p.satisfaction),
     };
   };
 
@@ -302,9 +384,11 @@ const ClinicsAnalytics: React.FC = () => {
       totalVisits: analyticsData?.statistics.totalVisits || 0,
       activeClinic: uniqueClinics.length,
       totalRevenue: (analyticsData?.statistics.totalSamplesDistributed || 0) * 50, // تقدير الإيرادات
-      avgVisitsPerDay: analyticsData ? Math.round((analyticsData.statistics.totalVisits / 30) * 10) / 10 : 0
+      avgVisitsPerDay: analyticsData
+        ? Math.round((analyticsData.statistics.totalVisits / 30) * 10) / 10
+        : 0,
     },
-    productPerformance: productPerformanceData()
+    productPerformance: productPerformanceData(),
   };
 
   // Chart options with RTL support and professional styling
@@ -313,59 +397,59 @@ const ClinicsAnalytics: React.FC = () => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: "top" as const,
         rtl: true,
         labels: {
           font: {
-            family: 'Cairo, sans-serif',
-            size: 12
+            family: "Cairo, sans-serif",
+            size: 12,
           },
           usePointStyle: true,
-          padding: 20
-        }
+          padding: 20,
+        },
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: '#3b82f6',
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        titleColor: "#fff",
+        bodyColor: "#fff",
+        borderColor: "#3b82f6",
         borderWidth: 1,
         cornerRadius: 8,
         titleFont: {
-          family: 'Cairo, sans-serif',
+          family: "Cairo, sans-serif",
           size: 14,
-          weight: 'bold'
+          weight: "bold",
         },
         bodyFont: {
-          family: 'Cairo, sans-serif',
-          size: 12
-        }
-      }
+          family: "Cairo, sans-serif",
+          size: 12,
+        },
+      },
     },
     scales: {
       x: {
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)'
+          color: "rgba(0, 0, 0, 0.1)",
         },
         ticks: {
           font: {
-            family: 'Cairo, sans-serif',
-            size: 11
-          }
-        }
+            family: "Cairo, sans-serif",
+            size: 11,
+          },
+        },
       },
       y: {
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)'
+          color: "rgba(0, 0, 0, 0.1)",
         },
         ticks: {
           font: {
-            family: 'Cairo, sans-serif',
-            size: 11
-          }
-        }
-      }
-    }
+            family: "Cairo, sans-serif",
+            size: 11,
+          },
+        },
+      },
+    },
   };
 
   // Monthly trends chart data
@@ -373,32 +457,32 @@ const ClinicsAnalytics: React.FC = () => {
     labels: updatedAnalyticsData.monthlyTrends.labels,
     datasets: [
       {
-        label: 'عدد الزيارات',
+        label: "عدد الزيارات",
         data: updatedAnalyticsData.monthlyTrends.visits,
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
         borderWidth: 3,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: '#3b82f6',
-        pointBorderColor: '#ffffff',
+        pointBackgroundColor: "#3b82f6",
+        pointBorderColor: "#ffffff",
         pointBorderWidth: 2,
-        pointRadius: 6
+        pointRadius: 6,
       },
       {
-        label: 'الإيرادات (بالآلاف)',
-        data: updatedAnalyticsData.monthlyTrends.revenue.map(r => r / 1000),
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        label: "الإيرادات (بالآلاف)",
+        data: updatedAnalyticsData.monthlyTrends.revenue.map((r) => r / 1000),
+        borderColor: "#10b981",
+        backgroundColor: "rgba(16, 185, 129, 0.1)",
         borderWidth: 3,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: '#10b981',
-        pointBorderColor: '#ffffff',
+        pointBackgroundColor: "#10b981",
+        pointBorderColor: "#ffffff",
         pointBorderWidth: 2,
-        pointRadius: 6
-      }
-    ]
+        pointRadius: 6,
+      },
+    ],
   };
 
   // Specialty distribution chart data
@@ -408,19 +492,19 @@ const ClinicsAnalytics: React.FC = () => {
       {
         data: updatedAnalyticsData.specialtyDistribution.data,
         backgroundColor: [
-          '#3b82f6',
-          '#10b981',
-          '#f59e0b',
-          '#ef4444',
-          '#8b5cf6',
-          '#06b6d4',
-          '#84cc16'
+          "#3b82f6",
+          "#10b981",
+          "#f59e0b",
+          "#ef4444",
+          "#8b5cf6",
+          "#06b6d4",
+          "#84cc16",
         ],
-        borderColor: '#ffffff',
+        borderColor: "#ffffff",
         borderWidth: 3,
-        hoverBorderWidth: 4
-      }
-    ]
+        hoverBorderWidth: 4,
+      },
+    ],
   };
 
   // Clinic comparison chart data
@@ -428,27 +512,25 @@ const ClinicsAnalytics: React.FC = () => {
     labels: updatedAnalyticsData.clinicComparison.labels,
     datasets: [
       {
-        label: 'عدد الزيارات',
+        label: "عدد الزيارات",
         data: updatedAnalyticsData.clinicComparison.visits,
-        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-        borderColor: '#3b82f6',
+        backgroundColor: "rgba(59, 130, 246, 0.8)",
+        borderColor: "#3b82f6",
         borderWidth: 2,
         borderRadius: 8,
-        borderSkipped: false
+        borderSkipped: false,
       },
       {
-        label: 'الإيرادات (بالآلاف)',
-        data: updatedAnalyticsData.clinicComparison.revenue.map(r => r / 1000),
-        backgroundColor: 'rgba(16, 185, 129, 0.8)',
-        borderColor: '#10b981',
+        label: "الإيرادات (بالآلاف)",
+        data: updatedAnalyticsData.clinicComparison.revenue.map((r) => r / 1000),
+        backgroundColor: "rgba(16, 185, 129, 0.8)",
+        borderColor: "#10b981",
         borderWidth: 2,
         borderRadius: 8,
-        borderSkipped: false
-      }
-    ]
+        borderSkipped: false,
+      },
+    ],
   };
-
-
 
   return (
     <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
@@ -456,14 +538,28 @@ const ClinicsAnalytics: React.FC = () => {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">تحليلات العيادات المتقدمة</h1>
-          <p className="text-gray-600">لوحة تحكم شاملة لمراقبة أداء العيادات والإحصائيات التفصيلية</p>
+          <p className="text-gray-600">
+            لوحة تحكم شاملة لمراقبة أداء العيادات والإحصائيات التفصيلية
+          </p>
         </div>
-        
+
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3">
           <Button onClick={handleRefresh} disabled={loading} variant="outline" size="sm">
-            <RefreshCw className={`h-4 w-4 ml-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ml-2 ${loading ? "animate-spin" : ""}`} />
             تحديث البيانات
+          </Button>
+          <Button
+            onClick={handleExportToExcel}
+            disabled={exportLoading}
+            variant="outline"
+            className="gap-2"
+          >
+            <Download className={`h-4 w-4 ${exportLoading ? "animate-spin" : ""}`} />
+            {exportLoading ? "جاري التصدير..." : "تصدير إلى Excel"}
+          </Button>
+          <Button onClick={handleExportToExcel} variant="default" size="sm">
+            اختبار التصدير
           </Button>
           <Button onClick={clearFilters} variant="outline" size="sm">
             <Filter className="h-4 w-4 ml-2" />
@@ -480,15 +576,6 @@ const ClinicsAnalytics: React.FC = () => {
               <SelectItem value="yearly">سنوي</SelectItem>
             </SelectContent>
           </Select>
-          {/* <Button 
-            onClick={handleExportToExcel} 
-            disabled={exportLoading}
-            variant="outline" 
-            className="gap-2"
-          >
-            <Download className={`h-4 w-4 ${exportLoading ? 'animate-spin' : ''}`} />
-            {exportLoading ? 'جاري التصدير...' : 'تصدير إلى Excel'}
-          </Button> */}
         </div>
       </div>
 
@@ -498,7 +585,7 @@ const ClinicsAnalytics: React.FC = () => {
           <Filter className="h-5 w-5 text-blue-500" />
           <h3 className="text-lg font-semibold text-gray-900">فلاتر البحث المتقدمة</h3>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {/* Date Range */}
           <div className="space-y-2">
@@ -513,7 +600,7 @@ const ClinicsAnalytics: React.FC = () => {
               className="w-full"
             />
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-2 text-gray-700">
               <Calendar className="h-4 w-4" />
@@ -539,8 +626,10 @@ const ClinicsAnalytics: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع الأطباء</SelectItem>
-                {uniqueDoctors.map(doctor => (
-                  <SelectItem key={doctor} value={doctor}>{doctor}</SelectItem>
+                {uniqueDoctors.map((doctor) => (
+                  <SelectItem key={doctor} value={doctor}>
+                    {doctor}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -558,14 +647,14 @@ const ClinicsAnalytics: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع التخصصات</SelectItem>
-                {uniqueSpecialties.map(specialty => (
-                  <SelectItem key={specialty} value={specialty}>{specialty}</SelectItem>
+                {uniqueSpecialties.map((specialty) => (
+                  <SelectItem key={specialty} value={specialty}>
+                    {specialty}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-
-
 
           {/* Segment Filter */}
           <div className="space-y-2">
@@ -579,8 +668,10 @@ const ClinicsAnalytics: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع الشرائح</SelectItem>
-                {uniqueSegments.map(segment => (
-                  <SelectItem key={segment} value={segment}>{segment}</SelectItem>
+                {uniqueSegments.map((segment) => (
+                  <SelectItem key={segment} value={segment}>
+                    {segment}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -598,8 +689,10 @@ const ClinicsAnalytics: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع العيادات</SelectItem>
-                {uniqueClinics.map(clinic => (
-                  <SelectItem key={clinic} value={clinic}>{clinic}</SelectItem>
+                {uniqueClinics.map((clinic) => (
+                  <SelectItem key={clinic} value={clinic}>
+                    {clinic}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -617,8 +710,10 @@ const ClinicsAnalytics: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع العلامات التجارية</SelectItem>
-                {uniqueBrands.map(brand => (
-                  <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                {uniqueBrands.map((brand) => (
+                  <SelectItem key={brand} value={brand}>
+                    {brand}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -646,16 +741,16 @@ const ClinicsAnalytics: React.FC = () => {
                     جميع المنتجات
                   </label>
                 </div>
-                {uniqueProducts.map(product => (
+                {uniqueProducts.map((product) => (
                   <div key={product} className="flex items-center space-x-2 rtl:space-x-reverse">
                     <Checkbox
                       id={`product-${product}`}
                       checked={selectedProducts.includes(product)}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          setSelectedProducts(prev => [...prev, product]);
+                          setSelectedProducts((prev) => [...prev, product]);
                         } else {
-                          setSelectedProducts(prev => prev.filter(p => p !== product));
+                          setSelectedProducts((prev) => prev.filter((p) => p !== product));
                         }
                       }}
                     />
@@ -668,11 +763,12 @@ const ClinicsAnalytics: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Filter Summary */}
         <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-sm text-gray-600">
-            عرض <span className="font-semibold text-blue-600">{filteredVisits.length}</span> من أصل <span className="font-semibold text-blue-600">{visits.length}</span> زيارة
+            عرض <span className="font-semibold text-blue-600">{filteredVisits.length}</span> من أصل{" "}
+            <span className="font-semibold text-blue-600">{visits.length}</span> زيارة
           </p>
         </div>
       </Card>
@@ -692,45 +788,45 @@ const ClinicsAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <Bar 
+              <Bar
                 data={{
                   labels: uniqueDoctors,
                   datasets: [
                     {
-                      label: 'عدد الزيارات',
-                      data: uniqueDoctors.map(doctor => 
-                        filteredVisits.filter(v => v.doctorName === doctor).length
+                      label: "عدد الزيارات",
+                      data: uniqueDoctors.map(
+                        (doctor) => filteredVisits.filter((v) => v.doctorName === doctor).length
                       ),
                       backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(245, 101, 101, 0.8)',
-                        'rgba(251, 191, 36, 0.8)',
-                        'rgba(139, 92, 246, 0.8)',
-                        'rgba(236, 72, 153, 0.8)',
-                        'rgba(6, 182, 212, 0.8)'
+                        "rgba(59, 130, 246, 0.8)",
+                        "rgba(16, 185, 129, 0.8)",
+                        "rgba(245, 101, 101, 0.8)",
+                        "rgba(251, 191, 36, 0.8)",
+                        "rgba(139, 92, 246, 0.8)",
+                        "rgba(236, 72, 153, 0.8)",
+                        "rgba(6, 182, 212, 0.8)",
                       ],
                       borderColor: [
-                        'rgb(59, 130, 246)',
-                        'rgb(16, 185, 129)',
-                        'rgb(245, 101, 101)',
-                        'rgb(251, 191, 36)',
-                        'rgb(139, 92, 246)',
-                        'rgb(236, 72, 153)',
-                        'rgb(6, 182, 212)'
+                        "rgb(59, 130, 246)",
+                        "rgb(16, 185, 129)",
+                        "rgb(245, 101, 101)",
+                        "rgb(251, 191, 36)",
+                        "rgb(139, 92, 246)",
+                        "rgb(236, 72, 153)",
+                        "rgb(6, 182, 212)",
                       ],
                       borderWidth: 2,
-                      borderRadius: 8
-                    }
-                  ]
-                }} 
+                      borderRadius: 8,
+                    },
+                  ],
+                }}
                 options={{
                   ...chartOptions,
                   plugins: {
                     ...chartOptions.plugins,
                     legend: {
-                      display: false
-                    }
+                      display: false,
+                    },
                   },
                   scales: {
                     ...chartOptions.scales,
@@ -738,11 +834,11 @@ const ClinicsAnalytics: React.FC = () => {
                       ...chartOptions.scales.x,
                       ticks: {
                         maxRotation: 45,
-                        minRotation: 45
-                      }
-                    }
-                  }
-                }} 
+                        minRotation: 45,
+                      },
+                    },
+                  },
+                }}
               />
             </div>
           </CardContent>
@@ -761,48 +857,48 @@ const ClinicsAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <Doughnut 
+              <Doughnut
                 data={{
                   labels: uniqueBrands,
                   datasets: [
                     {
-                      data: uniqueBrands.map(brand => 
-                        filteredVisits.filter(v => v.brand === brand).length
+                      data: uniqueBrands.map(
+                        (brand) => filteredVisits.filter((v) => v.brand === brand).length
                       ),
                       backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(245, 101, 101, 0.8)',
-                        'rgba(251, 191, 36, 0.8)',
-                        'rgba(139, 92, 246, 0.8)'
+                        "rgba(59, 130, 246, 0.8)",
+                        "rgba(16, 185, 129, 0.8)",
+                        "rgba(245, 101, 101, 0.8)",
+                        "rgba(251, 191, 36, 0.8)",
+                        "rgba(139, 92, 246, 0.8)",
                       ],
                       borderColor: [
-                        'rgb(59, 130, 246)',
-                        'rgb(16, 185, 129)',
-                        'rgb(245, 101, 101)',
-                        'rgb(251, 191, 36)',
-                        'rgb(139, 92, 246)'
+                        "rgb(59, 130, 246)",
+                        "rgb(16, 185, 129)",
+                        "rgb(245, 101, 101)",
+                        "rgb(251, 191, 36)",
+                        "rgb(139, 92, 246)",
                       ],
-                      borderWidth: 3
-                    }
-                  ]
-                }} 
+                      borderWidth: 3,
+                    },
+                  ],
+                }}
                 options={{
                   ...chartOptions,
                   plugins: {
                     ...chartOptions.plugins,
                     legend: {
-                      position: 'bottom',
+                      position: "bottom",
                       labels: {
                         padding: 20,
                         usePointStyle: true,
                         font: {
-                          size: 12
-                        }
-                      }
-                    }
-                  }
-                }} 
+                          size: 12,
+                        },
+                      },
+                    },
+                  },
+                }}
               />
             </div>
           </CardContent>
@@ -824,32 +920,34 @@ const ClinicsAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <Bar 
+              <Bar
                 data={{
-                  labels: uniqueClinics.map(clinic => clinic.length > 15 ? clinic.substring(0, 15) + '...' : clinic),
+                  labels: uniqueClinics.map((clinic) =>
+                    clinic.length > 15 ? clinic.substring(0, 15) + "..." : clinic
+                  ),
                   datasets: [
                     {
-                      label: 'عدد الزيارات',
-                      data: uniqueClinics.map(clinic => 
-                        filteredVisits.filter(v => v.clinicName === clinic).length
+                      label: "عدد الزيارات",
+                      data: uniqueClinics.map(
+                        (clinic) => filteredVisits.filter((v) => v.clinicName === clinic).length
                       ),
-                      backgroundColor: 'rgba(139, 92, 246, 0.8)',
-                      borderColor: 'rgb(139, 92, 246)',
+                      backgroundColor: "rgba(139, 92, 246, 0.8)",
+                      borderColor: "rgb(139, 92, 246)",
                       borderWidth: 2,
-                      borderRadius: 8
-                    }
-                  ]
-                }} 
+                      borderRadius: 8,
+                    },
+                  ],
+                }}
                 options={{
                   ...chartOptions,
-                  indexAxis: 'y',
+                  indexAxis: "y",
                   plugins: {
                     ...chartOptions.plugins,
                     legend: {
-                      display: false
-                    }
-                  }
-                }} 
+                      display: false,
+                    },
+                  },
+                }}
               />
             </div>
           </CardContent>
@@ -862,81 +960,71 @@ const ClinicsAnalytics: React.FC = () => {
               <Tag className="h-5 w-5 text-blue-500" />
               أداء الشرائح A & B
             </CardTitle>
-            <CardDescription>
-              مقارنة أداء الشرائح المختلفة للأطباء
-            </CardDescription>
+            <CardDescription>مقارنة أداء الشرائح المختلفة للأطباء</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <Bar 
+              <Bar
                 data={{
-                  labels: ['الشريحة A', 'الشريحة B'],
+                  labels: ["الشريحة A", "الشريحة B"],
                   datasets: [
                     {
-                      label: 'عدد الزيارات',
+                      label: "عدد الزيارات",
                       data: [
-                        filteredVisits.filter(v => v.classification === 'A').length,
-                        filteredVisits.filter(v => v.classification === 'B').length
+                        filteredVisits.filter((v) => v.classification === "A").length,
+                        filteredVisits.filter((v) => v.classification === "B").length,
                       ],
-                      backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)'
-                      ],
-                      borderColor: [
-                        'rgb(59, 130, 246)',
-                        'rgb(16, 185, 129)'
-                      ],
+                      backgroundColor: ["rgba(59, 130, 246, 0.8)", "rgba(16, 185, 129, 0.8)"],
+                      borderColor: ["rgb(59, 130, 246)", "rgb(16, 185, 129)"],
                       borderWidth: 3,
                       borderRadius: 12,
                       borderSkipped: false,
                     },
                     {
-                      label: 'إجمالي العينات',
+                      label: "إجمالي العينات",
                       data: [
-                        filteredVisits.filter(v => v.classification === 'A').reduce((sum, v) => sum + v.samplesCount, 0),
-                        filteredVisits.filter(v => v.classification === 'B').reduce((sum, v) => sum + v.samplesCount, 0)
+                        filteredVisits
+                          .filter((v) => v.classification === "A")
+                          .reduce((sum, v) => sum + v.samplesCount, 0),
+                        filteredVisits
+                          .filter((v) => v.classification === "B")
+                          .reduce((sum, v) => sum + v.samplesCount, 0),
                       ],
-                      backgroundColor: [
-                        'rgba(245, 101, 101, 0.8)',
-                        'rgba(251, 191, 36, 0.8)'
-                      ],
-                      borderColor: [
-                        'rgb(245, 101, 101)',
-                        'rgb(251, 191, 36)'
-                      ],
+                      backgroundColor: ["rgba(245, 101, 101, 0.8)", "rgba(251, 191, 36, 0.8)"],
+                      borderColor: ["rgb(245, 101, 101)", "rgb(251, 191, 36)"],
                       borderWidth: 3,
                       borderRadius: 12,
                       borderSkipped: false,
-                    }
-                  ]
-                }} 
+                    },
+                  ],
+                }}
                 options={{
                   ...chartOptions,
                   plugins: {
                     ...chartOptions.plugins,
                     legend: {
                       display: true,
-                      position: 'top' as const,
+                      position: "top" as const,
                       labels: {
                         font: {
-                          family: 'Cairo, sans-serif',
+                          family: "Cairo, sans-serif",
                           size: 12,
-                          weight: 'bold'
+                          weight: "bold",
                         },
                         usePointStyle: true,
-                        padding: 20
-                      }
+                        padding: 20,
+                      },
                     },
                     tooltip: {
                       ...chartOptions.plugins.tooltip,
                       callbacks: {
-                        label: function(context: any) {
-                          const label = context.dataset.label || '';
+                        label: function (context: any) {
+                          const label = context.dataset.label || "";
                           const value = context.parsed.y;
-                          return `${label}: ${value.toLocaleString('ar-SA')}`;
-                        }
-                      }
-                    }
+                          return `${label}: ${value.toLocaleString("ar-SA")}`;
+                        },
+                      },
+                    },
                   },
                   scales: {
                     ...chartOptions.scales,
@@ -945,21 +1033,21 @@ const ClinicsAnalytics: React.FC = () => {
                       beginAtZero: true,
                       ticks: {
                         ...chartOptions.scales.y.ticks,
-                        callback: function(value: any) {
-                          return value.toLocaleString('ar-SA');
-                        }
-                      }
-                    }
+                        callback: function (value: any) {
+                          return value.toLocaleString("ar-SA");
+                        },
+                      },
+                    },
                   },
                   animation: {
                     duration: 2000,
-                    easing: 'easeInOutQuart'
+                    easing: "easeInOutQuart",
                   },
                   interaction: {
                     intersect: false,
-                    mode: 'index'
-                  }
-                }} 
+                    mode: "index",
+                  },
+                }}
               />
             </div>
           </CardContent>
@@ -1005,27 +1093,30 @@ const ClinicsAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <Doughnut 
+              <Doughnut
                 data={{
                   ...specialtyData,
-                  labels: [...new Set(filteredVisits.map(v => v.specialty))],
-                  datasets: [{
-                    ...specialtyData.datasets[0],
-                    data: [...new Set(filteredVisits.map(v => v.specialty))].map(specialty => 
-                      filteredVisits.filter(v => v.specialty === specialty).length
-                    )
-                  }]
-                }} 
+                  labels: [...new Set(filteredVisits.map((v) => v.specialty))],
+                  datasets: [
+                    {
+                      ...specialtyData.datasets[0],
+                      data: [...new Set(filteredVisits.map((v) => v.specialty))].map(
+                        (specialty) =>
+                          filteredVisits.filter((v) => v.specialty === specialty).length
+                      ),
+                    },
+                  ],
+                }}
                 options={{
                   ...chartOptions,
                   plugins: {
                     ...chartOptions.plugins,
                     legend: {
                       ...chartOptions.plugins.legend,
-                      position: 'right' as const
-                    }
-                  }
-                }} 
+                      position: "right" as const,
+                    },
+                  },
+                }}
               />
             </div>
           </CardContent>
@@ -1044,40 +1135,43 @@ const ClinicsAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <Bar 
+              <Bar
                 data={{
-                  labels: [...new Set(filteredVisits.map(v => v.clinicName))],
+                  labels: [...new Set(filteredVisits.map((v) => v.clinicName))],
                   datasets: [
                     {
                       ...clinicComparisonData.datasets[0],
                       label: `عدد الزيارات (${filteredVisits.length} إجمالي)`,
-                      data: [...new Set(filteredVisits.map(v => v.clinicName))].map(clinic => 
-                        filteredVisits.filter(v => v.clinicName === clinic).length
-                      )
+                      data: [...new Set(filteredVisits.map((v) => v.clinicName))].map(
+                        (clinic) => filteredVisits.filter((v) => v.clinicName === clinic).length
+                      ),
                     },
                     {
                       ...clinicComparisonData.datasets[1],
-                      label: 'الإيرادات المقدرة (بالآلاف)',
-                      data: [...new Set(filteredVisits.map(v => v.clinicName))].map(clinic => 
-                        Math.round(filteredVisits.filter(v => v.clinicName === clinic).length * 500 / 1000)
-                      )
-                    }
-                  ]
-                }} 
+                      label: "الإيرادات المقدرة (بالآلاف)",
+                      data: [...new Set(filteredVisits.map((v) => v.clinicName))].map((clinic) =>
+                        Math.round(
+                          (filteredVisits.filter((v) => v.clinicName === clinic).length * 500) /
+                            1000
+                        )
+                      ),
+                    },
+                  ],
+                }}
                 options={{
                   ...chartOptions,
                   scales: {
                     ...chartOptions.scales,
                     x: {
                       ...chartOptions.scales.x,
-                      stacked: false
+                      stacked: false,
                     },
                     y: {
                       ...chartOptions.scales.y,
-                      stacked: false
-                    }
-                  }
-                }} 
+                      stacked: false,
+                    },
+                  },
+                }}
               />
             </div>
           </CardContent>
@@ -1090,45 +1184,43 @@ const ClinicsAnalytics: React.FC = () => {
               <Activity className="h-5 w-5 text-orange-500" />
               أداء المنتجات
             </CardTitle>
-            <CardDescription>
-              تحليل شامل لأداء المنتجات ورضا العملاء
-            </CardDescription>
+            <CardDescription>تحليل شامل لأداء المنتجات ورضا العملاء</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <Line 
+              <Line
                 data={{
                   labels: updatedAnalyticsData.productPerformance.labels,
                   datasets: [
                     {
-                      label: 'المبيعات (%)',
+                      label: "المبيعات (%)",
                       data: updatedAnalyticsData.productPerformance.sales,
-                      borderColor: '#f59e0b',
-                      backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                      borderColor: "#f59e0b",
+                      backgroundColor: "rgba(245, 158, 11, 0.1)",
                       borderWidth: 3,
                       fill: true,
                       tension: 0.4,
-                      pointBackgroundColor: '#f59e0b',
-                      pointBorderColor: '#ffffff',
+                      pointBackgroundColor: "#f59e0b",
+                      pointBorderColor: "#ffffff",
                       pointBorderWidth: 2,
-                      pointRadius: 6
+                      pointRadius: 6,
                     },
                     {
-                      label: 'رضا العملاء (%)',
+                      label: "رضا العملاء (%)",
                       data: updatedAnalyticsData.productPerformance.satisfaction,
-                      borderColor: '#8b5cf6',
-                      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                      borderColor: "#8b5cf6",
+                      backgroundColor: "rgba(139, 92, 246, 0.1)",
                       borderWidth: 3,
                       fill: true,
                       tension: 0.4,
-                      pointBackgroundColor: '#8b5cf6',
-                      pointBorderColor: '#ffffff',
+                      pointBackgroundColor: "#8b5cf6",
+                      pointBorderColor: "#ffffff",
                       pointBorderWidth: 2,
-                      pointRadius: 6
-                    }
-                  ]
-                }} 
-                options={chartOptions} 
+                      pointRadius: 6,
+                    },
+                  ],
+                }}
+                options={chartOptions}
               />
             </div>
           </CardContent>
@@ -1137,7 +1229,6 @@ const ClinicsAnalytics: React.FC = () => {
 
       {/* Summary Statistics */}
 
-
       {/* Visits Table */}
       <Card className="shadow-lg border-0">
         <CardHeader>
@@ -1145,13 +1236,11 @@ const ClinicsAnalytics: React.FC = () => {
             <Users className="h-5 w-5" />
             جدول الزيارات
           </CardTitle>
-          <CardDescription>
-            عرض تفصيلي لجميع الزيارات المسجلة
-          </CardDescription>
+          <CardDescription>عرض تفصيلي لجميع الزيارات المسجلة</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table dir="rtl" className="w-full border-collapse border border-gray-300" >
+            <table dir="rtl" className="w-full border-collapse border border-gray-300">
               <thead>
                 <tr className="bg-gray-50">
                   <th className="border border-gray-300 px-4 py-2 text-right">التاريخ</th>
@@ -1168,16 +1257,17 @@ const ClinicsAnalytics: React.FC = () => {
               <tbody>
                 {filteredVisits.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                    <td
+                      colSpan={9}
+                      className="border border-gray-300 px-4 py-8 text-center text-gray-500"
+                    >
                       لا توجد زيارات متاحة
                     </td>
                   </tr>
                 ) : (
                   filteredVisits.map((visit, index) => (
                     <tr key={visit._id} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">
-                        {visit.visitDate}
-                      </td>
+                      <td className="border border-gray-300 px-4 py-2">{visit.visitDate}</td>
                       <td className="border border-gray-300 px-4 py-2">{visit.doctorName}</td>
                       <td className="border border-gray-300 px-4 py-2">{visit.clinicName}</td>
                       <td className="border border-gray-300 px-4 py-2">
@@ -1201,7 +1291,6 @@ const ClinicsAnalytics: React.FC = () => {
                       <td className="border border-gray-300 px-4 py-2">{visit.medicalRepName}</td>
                       <td className="border border-gray-300 px-4 py-2">
                         <div className="flex gap-2 justify-center">
-                 
                           <Button
                             size="sm"
                             variant="outline"

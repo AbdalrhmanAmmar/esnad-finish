@@ -255,3 +255,17 @@ export const exportMarketingActivityRequestsToExcel = async (
   
   return response.data;
 };
+
+export const exportMedicalRepMarketingRequests = async (
+  params?: { medicalRepId?: string; startDate?: string; endDate?: string; status?: 'pending' | 'approved' | 'rejected' | 'all' }
+): Promise<Blob> => {
+  const queryParams = new URLSearchParams();
+  if (params?.medicalRepId) queryParams.append('medicalRepId', params.medicalRepId);
+  if (params?.startDate) queryParams.append('startDate', params.startDate);
+  if (params?.endDate) queryParams.append('endDate', params.endDate);
+  if (params?.status) queryParams.append('status', params.status);
+  const response = await api.get(`/marketing-activity-requests/export/medical-rep?${queryParams.toString()}`, {
+    responseType: 'blob',
+  });
+  return response.data;
+};

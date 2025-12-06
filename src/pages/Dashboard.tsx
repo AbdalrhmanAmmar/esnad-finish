@@ -1,993 +1,1309 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import DatePicker, { registerLocale } from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { ar } from 'date-fns/locale';
-
-// Register Arabic locale
-registerLocale('ar', ar);
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAuthStore } from '@/stores/authStore';
-import { getDetailedVisits, DetailedVisitsResponse } from '@/api/Visits';
-import { Loader2, AlertCircle, Eye, CalendarDays } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  BarElement,
+  Filler,
+} from "chart.js";
+import { Line, Doughnut, Bar } from "react-chartjs-2";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  TrendingUp,
+  Users,
+  Activity,
+  DollarSign,
+  Download,
+  Calendar,
+  Building2,
+  Stethoscope,
+  Filter,
+  RefreshCw,
+  Tag,
+  Package,
+  User,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import {
+  getDetailedVisits,
+  DetailedVisit,
+  DetailedVisitsResponse,
+  DetailedVisitsParams,
+  exportVisitsToExcel,
+} from "@/api/Visits";
+import { useAuthStore } from "@/stores/authStore";
 
-// Mock data for charts and tables
-const mockVisitsByDay = [
-  { day: 'الأحد', label: 'ح', visits: 45, percentage: 90 },
-  { day: 'الإثنين', label: 'إ', visits: 32, percentage: 64 },
-  { day: 'الثلاثاء', label: 'ث', visits: 38, percentage: 76 },
-  { day: 'الأربعاء', label: 'أ', visits: 42, percentage: 84 },
-  { day: 'الخميس', label: 'خ', visits: 50, percentage: 100 },
-  { day: 'الجمعة', label: 'ج', visits: 28, percentage: 56 },
-  { day: 'السبت', label: 'س', visits: 35, percentage: 70 }
-];
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  BarElement,
+  Filler
+);
 
-const mockVisitsByDoctor = [
-  { name: 'د. أحمد محمد', label: 'أح', visits: 65, specialty: 'باطنية', percentage: 100 },
-  { name: 'د. فاطمة علي', label: 'فا', visits: 52, specialty: 'أطفال', percentage: 80 },
-  { name: 'د. محمود حسن', label: 'مح', visits: 48, specialty: 'جراحة', percentage: 74 },
-  { name: 'د. سارة خالد', label: 'سا', visits: 38, specialty: 'نساء', percentage: 58 }
-];
+// Interface for processed visit data for display
+interface ProcessedVisit {
+  _id: string;
+  visitDate: string;
+  doctorName: string;
+  specialty: string;
+  clinicName: string;
+  classification: string;
+  brand: string;
+  products: string[];
+  samplesCount: number;
+  notes?: string;
+  medicalRepName: string;
+  teamArea: string;
+  teamProducts: string;
+  doctorId: string; // إضافة معرف الطبيب
+}
 
-const mockVisitsByArea = [
-  { name: 'الرياض', label: 'ر', visits: 120, percentage: 100 },
-  { name: 'جدة', label: 'ج', visits: 95, percentage: 79 },
-  { name: 'الدمام', label: 'د', visits: 78, percentage: 65 },
-  { name: 'مكة', label: 'م', visits: 68, percentage: 57 }
-];
+// Mock data for analytics
+const mockAnalyticsData = {
+  kpis: {
+    totalVisits: 2847,
+    totalRevenue: 125600,
+    activeClinic: 45,
+    avgVisitsPerDay: 23.7,
+    growthRate: 12.5,
+    satisfactionRate: 94.2,
+  },
+  monthlyTrends: {
+    labels: [
+      "يناير",
+      "فبراير",
+      "مارس",
+      "أبريل",
+      "مايو",
+      "يونيو",
+      "يوليو",
+      "أغسطس",
+      "سبتمبر",
+      "أكتوبر",
+      "نوفمبر",
+      "ديسمبر",
+    ],
+    visits: [180, 220, 195, 267, 289, 312, 298, 345, 378, 392, 415, 428],
+    revenue: [8500, 11200, 9800, 13400, 14500, 15600, 14900, 17250, 18900, 19600, 20750, 21400],
+  },
+  specialtyDistribution: {
+    labels: [
+      "طب الأطفال",
+      "طب الباطنة",
+      "طب الأسنان",
+      "طب العيون",
+      "طب الجلدية",
+      "طب النساء",
+      "طب العظام",
+    ],
+    data: [25, 20, 18, 12, 10, 8, 7],
+  },
+  clinicComparison: {
+    labels: ["عيادة النور", "عيادة الشفاء", "عيادة الأمل", "عيادة السلام", "عيادة الحياة"],
+    visits: [450, 380, 320, 290, 250],
+    revenue: [22500, 19000, 16000, 14500, 12500],
+  },
+  productPerformance: {
+    labels: ["المنتج الأول", "المنتج الثاني", "المنتج الثالث", "المنتج الرابع", "المنتج الخامس"],
+    sales: [85, 72, 68, 45, 38],
+    satisfaction: [92, 88, 85, 78, 75],
+  },
+  timeAnalysis: {
+    labels: [
+      "8:00",
+      "9:00",
+      "10:00",
+      "11:00",
+      "12:00",
+      "13:00",
+      "14:00",
+      "15:00",
+      "16:00",
+      "17:00",
+    ],
+    visits: [12, 25, 35, 42, 38, 28, 45, 52, 38, 22],
+  },
+};
 
-const mockVisitsByProduct = [
-  { name: 'أسبرين', label: 'أس', visits: 85, category: 'أدوية القلب', percentage: 100 },
-  { name: 'أموكسيل', label: 'أم', visits: 72, category: 'مضادات حيوية', percentage: 85 },
-  { name: 'فيتامين د', label: 'فد', visits: 68, category: 'فيتامينات', percentage: 80 },
-  { name: 'بنادول', label: 'بن', visits: 45, category: 'مسكنات', percentage: 53 }
-];
-
-const mockVisitsByClinic = [
-  { name: 'عيادة النور', label: 'ن', visits: 95, area: 'الرياض', percentage: 100 },
-  { name: 'عيادة الشفاء', label: 'ش', visits: 78, area: 'جدة', percentage: 82 },
-  { name: 'عيادة الأمل', label: 'أ', visits: 65, area: 'الدمام', percentage: 68 },
-  { name: 'عيادة السلام', label: 'س', visits: 52, area: 'مكة', percentage: 55 }
-];
-
-const mockVisitsByTime = [
-  { time: 'صباحاً', label: 'ص', visits: 85, percentage: 100 },
-  { time: 'ظهراً', label: 'ظ', visits: 72, percentage: 85 },
-  { time: 'عصراً', label: 'ع', visits: 68, percentage: 80 },
-  { time: 'مساءً', label: 'م', visits: 45, percentage: 53 }
-];
-
-const mockDoctorClassifications = [
-  { category: 'A', count: 45, percentage: 45, color: '#38e079' },
-  { category: 'B', count: 30, percentage: 30, color: '#4ade80' },
-  { category: 'C', count: 25, percentage: 25, color: '#86efac' }
-];
-
-const mockRecentVisits = [
-  { id: 1, doctor: 'د. أحمد محمد', doctorId: '1', clinic: 'عيادة النور', date: '2024-01-15', time: '10:30', product: 'منتج A', status: 'مكتملة' },
-  { id: 2, doctor: 'د. فاطمة علي', doctorId: '2', clinic: 'عيادة الشفاء', date: '2024-01-15', time: '11:00', product: 'منتج B', status: 'مكتملة' },
-  { id: 3, doctor: 'د. محمود حسن', doctorId: '3', clinic: 'عيادة الأمل', date: '2024-01-15', time: '14:30', product: 'منتج C', status: 'قيد الانتظار' },
-  { id: 4, doctor: 'د. سارة خالد', doctorId: '4', clinic: 'عيادة السلام', date: '2024-01-14', time: '09:00', product: 'منتج A', status: 'مكتملة' },
-  { id: 5, doctor: 'د. أحمد محمد', doctorId: '1', clinic: 'عيادة النور', date: '2024-01-14', time: '15:30', product: 'منتج D', status: 'مكتملة' },
-  { id: 6, doctor: 'د. فاطمة علي', doctorId: '2', clinic: 'عيادة الشفاء', date: '2024-01-13', time: '13:00', product: 'منتج C', status: 'مكتملة' },
-  { id: 7, doctor: 'د. محمود حسن', doctorId: '3', clinic: 'عيادة الأمل', date: '2024-01-13', time: '16:00', product: 'منتج B', status: 'قيد الانتظار' },
-  { id: 8, doctor: 'د. سارة خالد', doctorId: '4', clinic: 'عيادة السلام', date: '2024-01-12', time: '11:30', product: 'منتج A', status: 'مكتملة' }
-];
-
-const Dashboard: React.FC = () => {
-  const { user } = useAuthStore();
+const ClinicsAnalytics: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [visitsData, setVisitsData] = useState<DetailedVisitsResponse | null>(null);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
-  const [filters, setFilters] = useState({
-    startDate: '',
-    endDate: '',
-    doctorName: '',
-    specialization: '',
-    segment: '',
-    clinic: '',
-    brand: '',
-    products: ''
-  });
+  const user = useAuthStore();
+  const id = user.user?._id;
 
-  const fetchAnalytics = async () => {
-    if (!user?._id) {
-      setError('لم يتم العثور على معرف المستخدم');
-      setLoading(false);
-      return;
+  // Data states
+  const [visits, setVisits] = useState<ProcessedVisit[]>([]);
+  const [filteredVisits, setFilteredVisits] = useState<ProcessedVisit[]>([]);
+  const [analyticsData, setAnalyticsData] = useState<DetailedVisitsResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const [medicalRepId, setMedicalRepId] = useState(id); // Default medical rep ID
+
+  // Filter states
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [selectedDoctor, setSelectedDoctor] = useState("all");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("all");
+  const [selectedSegment, setSelectedSegment] = useState("all");
+  const [selectedBrand, setSelectedBrand] = useState("all");
+  const [selectedClinic, setSelectedClinic] = useState("all");
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState("daily");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit] = useState(50);
+  const [exportLoading, setExportLoading] = useState(false);
+
+  // Process raw API data to display format
+  const processVisitsData = (rawVisits: DetailedVisit[]): ProcessedVisit[] => {
+    return rawVisits.map((visit) => ({
+      _id: visit._id,
+      visitDate: new Date(visit.visitDate).toLocaleDateString("ar-SA", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        calendar: "gregory",
+      }),
+      doctorName: visit.doctorId.drName,
+      specialty: visit.doctorId.specialty,
+      clinicName: visit.doctorId.organizationName,
+      classification: visit.doctorId.segment,
+      brand: visit.doctorId.brand,
+      products: visit.products.map((p) => p.productId?.PRODUCT || "غير محدد"),
+      samplesCount: visit.products.reduce((sum, p) => sum + p.samplesCount, 0),
+      notes: visit.notes,
+      medicalRepName: `${visit.medicalRepId.firstName} ${visit.medicalRepId.lastName}`,
+      teamArea: visit.medicalRepId.teamArea,
+      teamProducts: visit.medicalRepId.teamProducts,
+      doctorId: visit.doctorId._id, // إضافة معرف الطبيب
+    }));
+  };
+
+  // Get unique values for filters from all data (not filtered data)
+  const [allVisits, setAllVisits] = useState<ProcessedVisit[]>([]);
+
+  // Store all visits separately to keep filters stable
+  useEffect(() => {
+    if (visits.length > 0 && allVisits.length === 0) {
+      setAllVisits(visits);
     }
+  }, [visits]);
 
+  // Helper to sanitize unique lists (remove empty/blank values)
+  const sanitizeUnique = (values: (string | undefined | null)[]) => [
+    ...new Set(
+      values
+        .filter((v): v is string => typeof v === "string")
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0)
+    ),
+  ];
+  const uniqueDoctors = sanitizeUnique(allVisits.map((visit) => visit.doctorName));
+  const uniqueSpecialties = sanitizeUnique(allVisits.map((visit) => visit.specialty));
+  const uniqueSegments = sanitizeUnique(allVisits.map((visit) => visit.classification));
+  const uniqueBrands = sanitizeUnique(allVisits.map((visit) => visit.brand));
+  const uniqueClinics = sanitizeUnique(allVisits.map((visit) => visit.clinicName));
+  const uniqueProducts = sanitizeUnique(allVisits.flatMap((visit) => visit.products));
+
+  // Fetch data from API
+  const fetchVisitsData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      console.log('Fetching visits for user:', user._id, 'with filters:', filters);
-      const response = await getDetailedVisits(user._id, filters);
-      console.log('API Response:', response);
+      const params: DetailedVisitsParams = {
+        page: currentPage,
+        limit: pageLimit,
+        startDate: fromDate || undefined,
+        endDate: toDate || undefined,
+        doctorName: selectedDoctor !== "all" ? selectedDoctor : undefined,
+        specialization: selectedSpecialty !== "all" ? selectedSpecialty : undefined,
+        segment: selectedSegment !== "all" ? selectedSegment : undefined,
+        clinic: selectedClinic !== "all" ? selectedClinic : undefined,
+        brand: selectedBrand !== "all" ? selectedBrand : undefined,
+        products: selectedProducts.length > 0 ? selectedProducts : undefined,
+      };
 
+      const response = await getDetailedVisits(medicalRepId, params);
+      console.log(response.data, "response");
       if (response.success && response.data) {
-        console.log('Visits data received:', response.data.visits?.length || 0, 'visits');
-        setVisitsData(response.data);
-
-        // Show info toast if no visits found
-        if (!response.data.visits || response.data.visits.length === 0) {
-          toast.error('لا توجد زيارات متاحة');
-        }
-      } else {
-        setError(response.message || 'فشل في جلب البيانات');
-        toast.error(response.message || 'فشل في جلب البيانات');
+        setAnalyticsData(response.data);
+        const processedVisits = processVisitsData(response.data.visits);
+        setVisits(processedVisits);
+        setFilteredVisits(processedVisits);
       }
-    } catch (err: any) {
-      console.error('Error fetching visits:', err);
-      setError(err.message || 'حدث خطأ أثناء جلب البيانات');
-      toast.error(err.message || 'حدث خطأ أثناء جلب البيانات');
+    } catch (error: any) {
+      toast.error(error.message || "حدث خطأ أثناء جلب البيانات");
     } finally {
       setLoading(false);
     }
   };
 
+  // Load data on component mount and when filters change
   useEffect(() => {
-    fetchAnalytics();
-  }, [user?._id]);
+    fetchVisitsData();
+  }, [
+    medicalRepId,
+    currentPage,
+    fromDate,
+    toDate,
+    selectedDoctor,
+    selectedSpecialty,
+    selectedSegment,
+    selectedBrand,
+    selectedClinic,
+    selectedProducts,
+  ]);
 
-  const handleFilterChange = (key: string, value: string | undefined) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  // Apply local filters (for immediate UI response)
+  useEffect(() => {
+    let filtered = visits;
+
+    // Additional local filtering if needed
+    setFilteredVisits(filtered);
+  }, [visits]);
+
+  const handleRefresh = () => {
+    fetchVisitsData();
+    toast.success("تم تحديث البيانات بنجاح");
   };
 
-  const handleApplyFilters = () => {
-    fetchAnalytics();
+  const clearFilters = () => {
+    setFromDate("");
+    setToDate("");
+    setSelectedDoctor("all");
+    setSelectedSpecialty("all");
+    setSelectedSegment("all");
+    setSelectedBrand("all");
+    setSelectedClinic("all");
+    setSelectedProducts([]);
+    setSelectedPeriod("daily");
+    setCurrentPage(1);
+    toast.success("تم مسح جميع الفلاتر");
   };
 
-  // Process visits data to calculate analytics
-  const processAnalytics = () => {
-    if (!visitsData?.visits || visitsData.visits.length === 0) {
-      return {
-        visitsByDay: mockVisitsByDay,
-        visitsByDoctor: mockVisitsByDoctor,
-        visitsByArea: mockVisitsByArea,
-        visitsByProduct: mockVisitsByProduct,
-        visitsByClinic: mockVisitsByClinic,
-        visitsByTime: mockVisitsByTime,
-        doctorClassifications: mockDoctorClassifications,
-        recentVisits: mockRecentVisits,
-        visitsBySpecialty: []
+  // Export visits to Excel
+  const handleExportToExcel = async () => {
+    try {
+      setExportLoading(true);
+
+      const params: DetailedVisitsParams = {
+        startDate: fromDate || undefined,
+        endDate: toDate || undefined,
+        doctorName: selectedDoctor !== "all" ? selectedDoctor : undefined,
+        specialization: selectedSpecialty !== "all" ? selectedSpecialty : undefined,
+        segment: selectedSegment !== "all" ? selectedSegment : undefined,
+        clinic: selectedClinic !== "all" ? selectedClinic : undefined,
+        brand: selectedBrand !== "all" ? selectedBrand : undefined,
+        products: selectedProducts.length > 0 ? selectedProducts : undefined,
       };
+
+      const blob = await exportVisitsToExcel(medicalRepId, params);
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Generate filename with current date
+      const currentDate = new Date().toISOString().split("T")[0];
+      const dateRange = fromDate && toDate ? `_${fromDate}_to_${toDate}` : `_${currentDate}`;
+      link.download = `visits_report${dateRange}.xlsx`;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("تم تصدير التقرير بنجاح");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("حدث خطأ أثناء تصدير التقرير");
+    } finally {
+      setExportLoading(false);
     }
+  };
 
-    const visits = visitsData.visits;
+  // Calculate product performance from real data
+  const productPerformanceData = () => {
+    const productStats = uniqueProducts
+      .map((product) => {
+        const productVisits = visits.filter((visit) => visit.products.includes(product));
+        const totalSamples = productVisits.reduce((sum, visit) => sum + visit.samplesCount, 0);
+        const avgSamples =
+          productVisits.length > 0 ? Math.round(totalSamples / productVisits.length) : 0;
+        const satisfaction = Math.min(95, Math.max(70, 75 + Math.random() * 20)); // تقدير رضا العملاء
 
-    // Process visits by day
-    const dayMap: Record<string, number> = {};
-    const dayLabels: Record<string, string> = {
-      'الأحد': 'ح', 'الإثنين': 'إ', 'الثلاثاء': 'ث',
-      'الأربعاء': 'أ', 'الخميس': 'خ', 'الجمعة': 'ج', 'السبت': 'س'
-    };
-
-    visits.forEach(visit => {
-      const day = new Date(visit.visitDate).toLocaleDateString('ar-SA', { weekday: 'long' });
-      dayMap[day] = (dayMap[day] || 0) + 1;
-    });
-
-    const maxDayVisits = Math.max(...Object.values(dayMap), 1);
-    const processedDayData = Object.entries(dayMap).map(([day, count]) => ({
-      day,
-      label: dayLabels[day] || day.charAt(0),
-      visits: count,
-      percentage: (count / maxDayVisits) * 100
-    }));
-
-    // Process visits by doctor
-    const doctorMap: Record<string, { visits: number; specialty: string }> = {};
-    visits.forEach(visit => {
-      const docName = visit.doctorId.drName;
-      if (!doctorMap[docName]) {
-        doctorMap[docName] = { visits: 0, specialty: visit.doctorId.specialty };
-      }
-      doctorMap[docName].visits++;
-    });
-
-    const maxDoctorVisits = Math.max(...Object.values(doctorMap).map(d => d.visits), 1);
-    const processedDoctorData = Object.entries(doctorMap).slice(0, 4).map(([name, data]) => ({
-      name,
-      label: name.split(' ').slice(1, 3).map(n => n[0]).join(''),
-      visits: data.visits,
-      specialty: data.specialty,
-      percentage: (data.visits / maxDoctorVisits) * 100
-    }));
-
-    // Process visits by specialty
-    const specialtyMap: Record<string, number> = {};
-    visits.forEach(visit => {
-      const specialty = visit.doctorId.specialty;
-      specialtyMap[specialty] = (specialtyMap[specialty] || 0) + 1;
-    });
-
-    const processedSpecialtyData = Object.entries(specialtyMap).map(([name, count]) => ({
-      name,
-      visits: count
-    }));
-
-    // Process visits by area
-    const areaMap: Record<string, number> = {};
-    visits.forEach(visit => {
-      const area = visit.doctorId.area || visit.doctorId.city;
-      areaMap[area] = (areaMap[area] || 0) + 1;
-    });
-
-    const maxAreaVisits = Math.max(...Object.values(areaMap), 1);
-    const processedAreaData = Object.entries(areaMap).slice(0, 4).map(([name, count]) => ({
-      name,
-      label: name.charAt(0),
-      visits: count,
-      percentage: (count / maxAreaVisits) * 100
-    }));
-
-    // Process visits by product
-    const productMap: Record<string, { visits: number; category: string }> = {};
-    visits.forEach(visit => {
-      visit.products.forEach(product => {
-        const prodName = product.productId.PRODUCT;
-        if (!productMap[prodName]) {
-          productMap[prodName] = { visits: 0, category: product.productId.BRAND };
-        }
-        productMap[prodName].visits++;
-      });
-    });
-
-    const maxProductVisits = Math.max(...Object.values(productMap).map(p => p.visits), 1);
-    const processedProductData = Object.entries(productMap).slice(0, 4).map(([name, data]) => ({
-      name,
-      label: name.substring(0, 2),
-      visits: data.visits,
-      category: data.category,
-      percentage: (data.visits / maxProductVisits) * 100
-    }));
-
-    // Process visits by clinic
-    const clinicMap: Record<string, { visits: number; area: string }> = {};
-    visits.forEach(visit => {
-      const clinic = visit.doctorId.organizationName;
-      const area = visit.doctorId.city;
-      if (!clinicMap[clinic]) {
-        clinicMap[clinic] = { visits: 0, area };
-      }
-      clinicMap[clinic].visits++;
-    });
-
-    const maxClinicVisits = Math.max(...Object.values(clinicMap).map(c => c.visits), 1);
-    const processedClinicData = Object.entries(clinicMap).slice(0, 4).map(([name, data]) => ({
-      name,
-      label: name.charAt(0),
-      visits: data.visits,
-      area: data.area,
-      percentage: (data.visits / maxClinicVisits) * 100
-    }));
-
-    // Process visits by time (using createdAt time)
-    const timeMap = { 'صباحاً': 0, 'ظهراً': 0, 'عصراً': 0, 'مساءً': 0 };
-    const timeLabels = { 'صباحاً': 'ص', 'ظهراً': 'ظ', 'عصراً': 'ع', 'مساءً': 'م' };
-
-    visits.forEach(visit => {
-      const hour = new Date(visit.createdAt).getHours();
-      if (hour >= 6 && hour < 12) timeMap['صباحاً']++;
-      else if (hour >= 12 && hour < 15) timeMap['ظهراً']++;
-      else if (hour >= 15 && hour < 18) timeMap['عصراً']++;
-      else timeMap['مساءً']++;
-    });
-
-    const maxTimeVisits = Math.max(...Object.values(timeMap), 1);
-    const processedTimeData = Object.entries(timeMap).map(([time, count]) => ({
-      time,
-      label: timeLabels[time as keyof typeof timeLabels],
-      visits: count,
-      percentage: (count / maxTimeVisits) * 100
-    }));
-
-    // Process doctor classifications (using segment)
-    const classificationMap: Record<string, number> = {};
-    visits.forEach(visit => {
-      const segment = visit.doctorId.segment || 'A';
-      classificationMap[segment] = (classificationMap[segment] || 0) + 1;
-    });
-
-    const totalClassifications = Object.values(classificationMap).reduce((sum, count) => sum + count, 0);
-    const processedClassifications = Object.entries(classificationMap).map(([category, count], idx) => ({
-      category,
-      count,
-      percentage: Math.round((count / totalClassifications) * 100),
-      color: idx === 0 ? '#38e079' : idx === 1 ? '#4ade80' : '#86efac'
-    }));
-
-    // Process recent visits
-    const processedRecentVisits = visits.slice(0, 8).map((visit, idx) => ({
-      id: idx + 1,
-      doctor: visit.doctorId.drName,
-      doctorId: visit.doctorId._id,
-      clinic: visit.doctorId.organizationName,
-      date: new Date(visit.visitDate).toLocaleDateString('ar-SA'),
-      time: new Date(visit.createdAt).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-      product: visit.products.map(p => p.productId.PRODUCT).join(', '),
-      status: visit.status === 'completed' ? 'مكتملة' : 'قيد الانتظار'
-    }));
+        return {
+          product,
+          visits: productVisits.length,
+          samples: totalSamples,
+          avgSamples,
+          satisfaction: Math.round(satisfaction),
+        };
+      })
+      .sort((a, b) => b.samples - a.samples);
 
     return {
-      visitsByDay: processedDayData.length > 0 ? processedDayData : mockVisitsByDay,
-      visitsByDoctor: processedDoctorData.length > 0 ? processedDoctorData : mockVisitsByDoctor,
-      visitsByArea: processedAreaData.length > 0 ? processedAreaData : mockVisitsByArea,
-      visitsByProduct: processedProductData.length > 0 ? processedProductData : mockVisitsByProduct,
-      visitsByClinic: processedClinicData.length > 0 ? processedClinicData : mockVisitsByClinic,
-      visitsByTime: processedTimeData,
-      doctorClassifications: processedClassifications.length > 0 ? processedClassifications : mockDoctorClassifications,
-      recentVisits: processedRecentVisits.length > 0 ? processedRecentVisits : mockRecentVisits,
-      visitsBySpecialty: processedSpecialtyData
+      labels: productStats.map((p) => p.product),
+      sales: productStats.map((p) => p.avgSamples),
+      satisfaction: productStats.map((p) => p.satisfaction),
     };
   };
 
-  const analytics = processAnalytics();
-  const visitsByDay = analytics.visitsByDay;
-  const visitsByDoctor = analytics.visitsByDoctor;
-  const visitsByArea = analytics.visitsByArea;
-  const visitsByProduct = analytics.visitsByProduct;
-  const visitsByClinic = analytics.visitsByClinic;
-  const visitsByTime = analytics.visitsByTime;
-  const visitsBySpecialty = analytics.visitsBySpecialty || [];
-  const doctorClassifications = analytics.doctorClassifications;
-  const recentVisits = analytics.recentVisits;
+  // Update analytics data based on real data
+  const updatedAnalyticsData = {
+    ...mockAnalyticsData,
+    kpis: {
+      ...mockAnalyticsData.kpis,
+      totalVisits: analyticsData?.statistics.totalVisits || 0,
+      activeClinic: uniqueClinics.length,
+      totalRevenue: (analyticsData?.statistics.totalSamplesDistributed || 0) * 50, // تقدير الإيرادات
+      avgVisitsPerDay: analyticsData
+        ? Math.round((analyticsData.statistics.totalVisits / 30) * 10) / 10
+        : 0,
+    },
+    productPerformance: productPerformanceData(),
+  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f6f8f7] dark:bg-[#122017] flex items-center justify-center" dir="rtl">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 animate-spin text-[#38e079] mx-auto" />
-          <p className="text-lg font-medium">جاري تحميل البيانات...</p>
-        </div>
-      </div>
-    );
-  }
+  // Chart options with RTL support and professional styling
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+        rtl: true,
+        labels: {
+          font: {
+            family: "Cairo, sans-serif",
+            size: 12,
+          },
+          usePointStyle: true,
+          padding: 20,
+        },
+      },
+      tooltip: {
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        titleColor: "#fff",
+        bodyColor: "#fff",
+        borderColor: "#3b82f6",
+        borderWidth: 1,
+        cornerRadius: 8,
+        titleFont: {
+          family: "Cairo, sans-serif",
+          size: 14,
+          weight: "bold",
+        },
+        bodyFont: {
+          family: "Cairo, sans-serif",
+          size: 12,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          color: "rgba(0, 0, 0, 0.1)",
+        },
+        ticks: {
+          font: {
+            family: "Cairo, sans-serif",
+            size: 11,
+          },
+        },
+      },
+      y: {
+        grid: {
+          color: "rgba(0, 0, 0, 0.1)",
+        },
+        ticks: {
+          font: {
+            family: "Cairo, sans-serif",
+            size: 11,
+          },
+        },
+      },
+    },
+  };
 
-  if (error && !visitsData) {
-    return (
-      <div className="min-h-screen bg-[#f6f8f7] dark:bg-[#122017] flex items-center justify-center p-4" dir="rtl">
-        <div className="text-center space-y-4 max-w-md">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
-          <h2 className="text-2xl font-bold">خطأ في تحميل البيانات</h2>
-          <p className="text-muted-foreground">{error}</p>
-          <Button onClick={fetchAnalytics} className="bg-[#38e079] hover:bg-[#38e079]/90">
-            إعادة المحاولة
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // Monthly trends chart data
+  const monthlyTrendsData = {
+    labels: updatedAnalyticsData.monthlyTrends.labels,
+    datasets: [
+      {
+        label: "عدد الزيارات",
+        data: updatedAnalyticsData.monthlyTrends.visits,
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: "#3b82f6",
+        pointBorderColor: "#ffffff",
+        pointBorderWidth: 2,
+        pointRadius: 6,
+      },
+      {
+        label: "الإيرادات (بالآلاف)",
+        data: updatedAnalyticsData.monthlyTrends.revenue.map((r) => r / 1000),
+        borderColor: "#10b981",
+        backgroundColor: "rgba(16, 185, 129, 0.1)",
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: "#10b981",
+        pointBorderColor: "#ffffff",
+        pointBorderWidth: 2,
+        pointRadius: 6,
+      },
+    ],
+  };
+
+  // Specialty distribution chart data
+  const specialtyData = {
+    labels: updatedAnalyticsData.specialtyDistribution.labels,
+    datasets: [
+      {
+        data: updatedAnalyticsData.specialtyDistribution.data,
+        backgroundColor: [
+          "#3b82f6",
+          "#10b981",
+          "#f59e0b",
+          "#ef4444",
+          "#8b5cf6",
+          "#06b6d4",
+          "#84cc16",
+        ],
+        borderColor: "#ffffff",
+        borderWidth: 3,
+        hoverBorderWidth: 4,
+      },
+    ],
+  };
+
+  // Clinic comparison chart data
+  const clinicComparisonData = {
+    labels: updatedAnalyticsData.clinicComparison.labels,
+    datasets: [
+      {
+        label: "عدد الزيارات",
+        data: updatedAnalyticsData.clinicComparison.visits,
+        backgroundColor: "rgba(59, 130, 246, 0.8)",
+        borderColor: "#3b82f6",
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      },
+      {
+        label: "الإيرادات (بالآلاف)",
+        data: updatedAnalyticsData.clinicComparison.revenue.map((r) => r / 1000),
+        backgroundColor: "rgba(16, 185, 129, 0.8)",
+        borderColor: "#10b981",
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      },
+    ],
+  };
 
   return (
-    <div className="min-h-screen bg-[#f6f8f7] dark:bg-[#122017]" dir="rtl">
-      {/* Header - Sticky on mobile, regular on desktop */}
-      <header className="md:relative sticky top-0 z-10 flex items-center bg-[#f6f8f7] dark:bg-[#122017] p-4 md:p-6 pb-2 md:pb-6 justify-between border-b border-[#122017]/10 dark:border-[#f6f8f7]/10">
-
-        <h1 className="text-lg md:text-3xl font-bold">تحليلات الزيارات</h1>
-        <div className="md:flex items-center gap-2 hidden">
-          <span className="text-sm text-muted-foreground">مرحباً، {user?.firstName} {user?.lastName}</span>
+    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">تحليلات العيادات المتقدمة</h1>
+          <p className="text-gray-600">
+            لوحة تحكم شاملة لمراقبة أداء العيادات والإحصائيات التفصيلية
+          </p>
         </div>
-        <div className="w-10 md:hidden"></div>
-      </header>
 
-      <div className="p-4 md:px-6 pb-24 md:pb-6 space-y-4 md:space-y-6">
-        {/* Filters */}
-        <div className="pb-4">
-          <div className="flex flex-wrap items-end gap-2">
-            {/* Start Date */}
-            <div className="relative min-w-[180px]">
-              <DatePicker
-                selected={startDate}
-                onChange={(date: Date | null) => {
-                  setStartDate(date);
-                  handleFilterChange('startDate', date ? date.toISOString().split('T')[0] : '');
-                  if (date) {
-                    setTimeout(() => handleApplyFilters(), 100);
-                  }
-                }}
-                dateFormat="yyyy-MM-dd"
-                placeholderText="تاريخ البداية"
-                className="w-full h-10 text-right pr-10 pl-4 text-sm bg-background border-2 border-[#38e079]/20 hover:border-[#38e079] focus:border-[#38e079] transition-all duration-200 rounded-full shadow-sm focus:shadow-md focus:ring-2 focus:ring-[#38e079]/20 outline-none"
-                calendarClassName="custom-datepicker-green"
-                popperClassName="z-[9999]"
-                showPopperArrow={false}
-                locale="ar"
-                wrapperClassName="w-full"
-              />
-              <CalendarDays className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#38e079] pointer-events-none" />
-            </div>
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={handleRefresh} disabled={loading} variant="outline" size="sm">
+            <RefreshCw className={`h-4 w-4 ml-2 ${loading ? "animate-spin" : ""}`} />
+            تحديث البيانات
+          </Button>
+          <Button onClick={clearFilters} variant="outline" size="sm">
+            <Filter className="h-4 w-4 ml-2" />
+            مسح الفلاتر
+          </Button>
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="اختر الفترة" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">يومي</SelectItem>
+              <SelectItem value="weekly">أسبوعي</SelectItem>
+              <SelectItem value="monthly">شهري</SelectItem>
+              <SelectItem value="yearly">سنوي</SelectItem>
+            </SelectContent>
+          </Select>
+          {/* <Button 
+            onClick={handleExportToExcel} 
+            disabled={exportLoading}
+            variant="outline" 
+            className="gap-2"
+          >
+            <Download className={`h-4 w-4 ${exportLoading ? 'animate-spin' : ''}`} />
+            {exportLoading ? 'جاري التصدير...' : 'تصدير إلى Excel'}
+          </Button> */}
+        </div>
+      </div>
 
-            {/* End Date */}
-            <div className="relative min-w-[180px]">
-              <DatePicker
-                selected={endDate}
-                onChange={(date: Date | null) => {
-                  setEndDate(date);
-                  handleFilterChange('endDate', date ? date.toISOString().split('T')[0] : '');
-                  if (date) {
-                    setTimeout(() => handleApplyFilters(), 100);
-                  }
-                }}
-                dateFormat="yyyy-MM-dd"
-                placeholderText="تاريخ النهاية"
-                className="w-full h-10 text-right pr-10 pl-4 text-sm bg-background border-2 border-[#38e079]/20 hover:border-[#38e079] focus:border-[#38e079] transition-all duration-200 rounded-full shadow-sm focus:shadow-md focus:ring-2 focus:ring-[#38e079]/20 outline-none"
-                calendarClassName="custom-datepicker-green"
-                popperClassName="z-[9999]"
-                showPopperArrow={false}
-                locale="ar"
-                minDate={startDate || undefined}
-                wrapperClassName="w-full"
-              />
-              <CalendarDays className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#38e079] pointer-events-none" />
-            </div>
+      {/* Filters Section */}
+      <Card className="p-6 shadow-lg border-0">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="h-5 w-5 text-blue-500" />
+          <h3 className="text-lg font-semibold text-gray-900">فلاتر البحث المتقدمة</h3>
+        </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">جميع التخصصات</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 space-y-1">
-                  <div
-                    className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('specialization', '');
-                      handleApplyFilters();
-                    }}
-                  >
-                    الكل
-                  </div>
-                  {visitsBySpecialty.map((specialty, i) => (
-                    <div
-                      key={i}
-                      className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('specialization', specialty.name);
-                        handleApplyFilters();
-                      }}
-                    >
-                      {specialty.name}
-                    </div>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">الأطباء</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 space-y-1">
-                  <div
-                    className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('doctorName', '');
-                      handleApplyFilters();
-                    }}
-                  >
-                    الكل
-                  </div>
-                  {visitsByDoctor.map((doctor, i) => (
-                    <div
-                      key={i}
-                      className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('doctorName', doctor.name);
-                        handleApplyFilters();
-                      }}
-                    >
-                      {doctor.name}
-                    </div>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">المناطق</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 space-y-1">
-                  <div
-                    className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('clinic', '');
-                      handleApplyFilters();
-                    }}
-                  >
-                    الكل
-                  </div>
-                  {visitsByArea.map((area, i) => (
-                    <div
-                      key={i}
-                      className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('clinic', area.name);
-                        handleApplyFilters();
-                      }}
-                    >
-                      {area.name}
-                    </div>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">المنتجات</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 space-y-1">
-                  <div
-                    className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('products', '');
-                      handleApplyFilters();
-                    }}
-                  >
-                    الكل
-                  </div>
-                  {visitsByProduct.map((product, i) => (
-                    <div
-                      key={i}
-                      className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('products', product.name);
-                        handleApplyFilters();
-                      }}
-                    >
-                      {product.name}
-                    </div>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">فئة المنتج</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 text-sm text-muted-foreground">جميع الفئات</div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">العيادات</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 space-y-1">
-                  <div
-                    className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('clinic', '');
-                      handleApplyFilters();
-                    }}
-                  >
-                    الكل
-                  </div>
-                  {visitsByClinic.map((clinic, i) => (
-                    <div
-                      key={i}
-                      className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('clinic', clinic.name);
-                        handleApplyFilters();
-                      }}
-                    >
-                      {clinic.name}
-                    </div>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-full border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                  <span className="text-sm font-medium">تصنيفات الأطباء</span>
-                  <span className="mr-2">▼</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="p-2 space-y-1">
-                  <div
-                    className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                    onClick={() => {
-                      handleFilterChange('segment', '');
-                      handleApplyFilters();
-                    }}
-                  >
-                    الكل
-                  </div>
-                  {doctorClassifications.map((cat, i) => (
-                    <div
-                      key={i}
-                      className="text-sm py-1 hover:bg-muted px-2 rounded cursor-pointer"
-                      onClick={() => {
-                        handleFilterChange('segment', cat.category);
-                        handleApplyFilters();
-                      }}
-                    >
-                      فئة {cat.category}
-                    </div>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {/* Date Range */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+              <Calendar className="h-4 w-4" />
+              من تاريخ
+            </label>
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="w-full"
+            />
           </div>
-        </div>
 
-        {/* Analytics Cards - Grid 2x3 on mobile, 3 columns on desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-          {/* Visits by Day */}
-          <Card className="rounded-xl border-[#122017]/10 dark:border-[#f6f8f7]/10 bg-white dark:bg-[#122017]">
-            <CardContent className="p-3 md:p-6 flex flex-col gap-2">
-              <p className="text-sm md:text-base font-medium">الزيارات حسب اليوم</p>
-              <div className="grid min-h-[120px] md:min-h-[180px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
-                {visitsByDay.map((day, i) => {
-                  const maxVisits = Math.max(...visitsByDay.map(d => d.visits));
-                  const isHighest = day.visits === maxVisits;
-                  return (
-                    <React.Fragment key={i}>
-                      <div
-                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
-                        style={{ height: `${day.percentage}%` }}
-                        title={`${day.day}: ${day.visits} زيارة`}
-                      >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
-                          {day.day}: {day.visits}
-                        </div>
-                      </div>
-                      <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
-                        {day.label}
-                      </p>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+              <Calendar className="h-4 w-4" />
+              إلى تاريخ
+            </label>
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="w-full"
+            />
+          </div>
 
-          {/* Visits by Physician */}
-          <Card className="rounded-xl border-[#122017]/10 dark:border-[#f6f8f7]/10 bg-white dark:bg-[#122017]">
-            <CardContent className="p-3 md:p-6 flex flex-col gap-2">
-              <p className="text-sm md:text-base font-medium">الزيارات حسب الطبيب</p>
-              <div className="grid min-h-[120px] md:min-h-[180px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
-                {visitsByDoctor.map((doctor, i) => {
-                  const maxVisits = Math.max(...visitsByDoctor.map(d => d.visits));
-                  const isHighest = doctor.visits === maxVisits;
-                  return (
-                    <React.Fragment key={i}>
-                      <div
-                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
-                        style={{ height: `${doctor.percentage}%` }}
-                        title={`${doctor.name}: ${doctor.visits} زيارة`}
-                      >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
-                          {doctor.name}: {doctor.visits}
-                        </div>
-                      </div>
-                      <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
-                        {doctor.label}
-                      </p>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Doctor Filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+              <User className="h-4 w-4" />
+              الطبيب
+            </label>
+            <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر الطبيب" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع الأطباء</SelectItem>
+                {uniqueDoctors.map((doctor) => (
+                  <SelectItem key={doctor} value={doctor}>
+                    {doctor}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Visits by Area */}
-          <Card className="rounded-xl border-[#122017]/10 dark:border-[#f6f8f7]/10 bg-white dark:bg-[#122017]">
-            <CardContent className="p-3 md:p-6 flex flex-col gap-2">
-              <p className="text-sm md:text-base font-medium">الزيارات حسب المنطقة</p>
-              <div className="grid min-h-[120px] md:min-h-[180px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
-                {visitsByArea.map((area, i) => {
-                  const maxVisits = Math.max(...visitsByArea.map(a => a.visits));
-                  const isHighest = area.visits === maxVisits;
-                  return (
-                    <React.Fragment key={i}>
-                      <div
-                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
-                        style={{ height: `${area.percentage}%` }}
-                        title={`${area.name}: ${area.visits} زيارة`}
-                      >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
-                          {area.name}: {area.visits}
-                        </div>
-                      </div>
-                      <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
-                        {area.label}
-                      </p>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Specialty Filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+              <Stethoscope className="h-4 w-4" />
+              التخصص
+            </label>
+            <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر التخصص" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع التخصصات</SelectItem>
+                {uniqueSpecialties.map((specialty) => (
+                  <SelectItem key={specialty} value={specialty}>
+                    {specialty}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Visits by Product */}
-          <Card className="rounded-xl border-[#122017]/10 dark:border-[#f6f8f7]/10 bg-white dark:bg-[#122017]">
-            <CardContent className="p-3 md:p-6 flex flex-col gap-2">
-              <p className="text-sm md:text-base font-medium">الزيارات حسب المنتج</p>
-              <div className="grid min-h-[120px] md:min-h-[180px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
-                {visitsByProduct.map((product, i) => {
-                  const maxVisits = Math.max(...visitsByProduct.map(p => p.visits));
-                  const isHighest = product.visits === maxVisits;
-                  return (
-                    <React.Fragment key={i}>
-                      <div
-                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
-                        style={{ height: `${product.percentage}%` }}
-                        title={`${product.name}: ${product.visits} زيارة`}
-                      >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
-                          {product.name}: {product.visits}
-                        </div>
-                      </div>
-                      <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
-                        {product.label}
-                      </p>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Segment Filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+              <Tag className="h-4 w-4" />
+              الشريحة
+            </label>
+            <Select value={selectedSegment} onValueChange={setSelectedSegment}>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر الشريحة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع الشرائح</SelectItem>
+                {uniqueSegments.map((segment) => (
+                  <SelectItem key={segment} value={segment}>
+                    {segment}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Visits by Clinic */}
-          <Card className="rounded-xl border-[#122017]/10 dark:border-[#f6f8f7]/10 bg-white dark:bg-[#122017]">
-            <CardContent className="p-3 md:p-6 flex flex-col gap-2">
-              <p className="text-sm md:text-base font-medium">الزيارات حسب العيادة</p>
-              <div className="grid min-h-[120px] md:min-h-[180px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
-                {visitsByClinic.map((clinic, i) => {
-                  const maxVisits = Math.max(...visitsByClinic.map(c => c.visits));
-                  const isHighest = clinic.visits === maxVisits;
-                  return (
-                    <React.Fragment key={i}>
-                      <div
-                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
-                        style={{ height: `${clinic.percentage}%` }}
-                        title={`${clinic.name}: ${clinic.visits} زيارة`}
-                      >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
-                          {clinic.name}: {clinic.visits}
-                        </div>
-                      </div>
-                      <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
-                        {clinic.label}
-                      </p>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Clinic Filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+              <Building2 className="h-4 w-4" />
+              العيادة
+            </label>
+            <Select value={selectedClinic} onValueChange={setSelectedClinic}>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر العيادة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع العيادات</SelectItem>
+                {uniqueClinics.map((clinic) => (
+                  <SelectItem key={clinic} value={clinic}>
+                    {clinic}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Visits by Time - 7th Chart */}
-          <Card className="rounded-xl border-[#122017]/10 dark:border-[#f6f8f7]/10 bg-white dark:bg-[#122017]">
-            <CardContent className="p-3 md:p-6 flex flex-col gap-2">
-              <p className="text-sm md:text-base font-medium">الزيارات حسب الوقت</p>
-              <div className="grid min-h-[120px] md:min-h-[180px] grid-flow-col gap-2 grid-rows-[1fr_auto] items-end justify-items-center pt-2">
-                {visitsByTime.map((time, i) => {
-                  const maxVisits = Math.max(...visitsByTime.map(t => t.visits));
-                  const isHighest = time.visits === maxVisits;
-                  return (
-                    <React.Fragment key={i}>
-                      <div
-                        className={`w-full rounded-t relative group ${isHighest ? 'bg-[#38e079]' : 'bg-[#38e079]/20'} cursor-pointer transition-all hover:opacity-80`}
-                        style={{ height: `${time.percentage}%` }}
-                        title={`${time.time}: ${time.visits} زيارة`}
-                      >
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#122017] dark:bg-[#f6f8f7] text-[#f6f8f7] dark:text-[#122017] px-2 py-1 rounded text-xs whitespace-nowrap pointer-events-none z-10">
-                          {time.time}: {time.visits}
-                        </div>
-                      </div>
-                      <p className={`text-xs font-medium ${isHighest ? 'font-bold' : 'opacity-60'}`}>
-                        {time.label}
-                      </p>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Brand Filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+              <Tag className="h-4 w-4" />
+              العلامة التجارية
+            </label>
+            <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر العلامة التجارية" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع العلامات التجارية</SelectItem>
+                {uniqueBrands.map((brand) => (
+                  <SelectItem key={brand} value={brand}>
+                    {brand}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Physicians Classifications - Donut Chart */}
-          <Card className="rounded-xl border-[#122017]/10 dark:border-[#f6f8f7]/10 bg-white dark:bg-[#122017]">
-            <CardContent className="p-3 md:p-6 flex flex-col gap-2">
-              <p className="text-sm md:text-base font-medium">تصنيفات الأطباء</p>
-              <div className="min-h-[120px] md:min-h-[180px] flex items-center justify-center">
-                <div className="relative w-28 h-28 md:w-40 md:h-40">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                    <circle
-                      className="stroke-[#38e079]/20"
-                      cx="18"
-                      cy="18"
-                      fill="none"
-                      r="15.91549430918954"
-                      strokeWidth="4"
-                    />
-                    {doctorClassifications.map((classification, idx) => {
-                      const offset = idx === 0 ? 0 : doctorClassifications.slice(0, idx).reduce((sum, c) => sum + c.percentage, 0);
-                      return (
-                        <circle
-                          key={idx}
-                          className="cursor-pointer transition-all hover:opacity-80"
-                          style={{ stroke: classification.color }}
-                          cx="18"
-                          cy="18"
-                          fill="none"
-                          r="15.91549430918954"
-                          strokeDasharray={`${classification.percentage}, 100`}
-                          strokeDashoffset={`-${offset}`}
-                          strokeWidth="4"
-                        >
-                          <title>فئة {classification.category}: {classification.count} ({classification.percentage}%)</title>
-                        </circle>
-                      );
-                    })}
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs md:text-sm font-bold">
-                      {doctorClassifications.reduce((sum, c) => sum + c.count, 0)}
-                    </span>
-                  </div>
+          {/* Products Filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+              <Package className="h-4 w-4" />
+              المنتجات
+            </label>
+            <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <Checkbox
+                    id="all-products"
+                    checked={selectedProducts.length === 0}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedProducts([]);
+                      }
+                    }}
+                  />
+                  <label htmlFor="all-products" className="text-sm font-medium">
+                    جميع المنتجات
+                  </label>
                 </div>
-              </div>
-              <div className="flex justify-center gap-3 flex-wrap mt-2">
-                {doctorClassifications.map((classification, idx) => (
-                  <div key={idx} className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: classification.color }}></div>
-                    <span className="text-xs">فئة {classification.category}: {classification.count}</span>
+                {uniqueProducts.map((product) => (
+                  <div key={product} className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <Checkbox
+                      id={`product-${product}`}
+                      checked={selectedProducts.includes(product)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedProducts((prev) => [...prev, product]);
+                        } else {
+                          setSelectedProducts((prev) => prev.filter((p) => p !== product));
+                        }
+                      }}
+                    />
+                    <label htmlFor={`product-${product}`} className="text-sm">
+                      {product}
+                    </label>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Visits - Mobile Cards (First 5) */}
-        <div className="md:hidden space-y-3">
-          <h3 className="text-lg font-bold px-4">الزيارات الأخيرة</h3>
-          {recentVisits.slice(0, 5).map((visit) => (
-            <div key={visit.id} className="bg-[#f6f8f7] dark:bg-[#122017] p-3 rounded-lg border border-[#122017]/10 dark:border-[#f6f8f7]/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold">#{visit.id}</span>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  visit.status === 'مكتملة'
-                    ? 'bg-[#38e079]/20 text-[#38e079]'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {visit.status}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                <div>
-                  <span className="text-muted-foreground">الطبيب:</span>
-                  <span className="font-medium mr-1">{visit.doctor}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">العيادة:</span>
-                  <span className="font-medium mr-1">{visit.clinic}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">التاريخ:</span>
-                  <span className="font-medium mr-1">{visit.date}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">الوقت:</span>
-                  <span className="font-medium mr-1">{visit.time}</span>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">المنتج:</span>
-                  <span className="font-medium mr-1">{visit.product}</span>
-                </div>
-              </div>
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* Recent Visits Table - Desktop */}
-        <Card className="hidden md:block">
-          <CardContent className="p-4 md:p-6">
-            <h3 className="text-lg font-bold mb-4">الزيارات الأخيرة</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#122017]/10 dark:border-[#f6f8f7]/10">
-                    <th className="text-right py-3 px-4 font-semibold">#</th>
-                    <th className="text-right py-3 px-4 font-semibold">الطبيب</th>
-                    <th className="text-right py-3 px-4 font-semibold">العيادة</th>
-                    <th className="text-right py-3 px-4 font-semibold">التاريخ</th>
-                    <th className="text-right py-3 px-4 font-semibold">الوقت</th>
-                    <th className="text-right py-3 px-4 font-semibold">المنتج</th>
-                    <th className="text-right py-3 px-4 font-semibold">الحالة</th>
-                    <th className="text-right py-3 px-4 font-semibold">الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentVisits.map((visit) => (
-                    <tr key={visit.id} className="border-b border-[#122017]/10 dark:border-[#f6f8f7]/10 hover:bg-[#38e079]/5 transition-colors">
-                      <td className="py-3 px-4 font-medium">{visit.id}</td>
-                      <td className="py-3 px-4">{visit.doctor}</td>
-                      <td className="py-3 px-4">{visit.clinic}</td>
-                      <td className="py-3 px-4">{visit.date}</td>
-                      <td className="py-3 px-4">{visit.time}</td>
-                      <td className="py-3 px-4">{visit.product}</td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          visit.status === 'مكتملة'
-                            ? 'bg-[#38e079]/20 text-[#38e079] dark:bg-[#38e079]/30 dark:text-[#38e079]'
-                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        }`}>
-                          {visit.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/doctor-card/${visit.doctorId}`)}
-                          className="h-8 gap-2 hover:bg-[#38e079]/10 hover:text-[#38e079]"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span className="text-xs">عرض الطبيب</span>
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Filter Summary */}
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-gray-600">
+            عرض <span className="font-semibold text-blue-600">{filteredVisits.length}</span> من أصل{" "}
+            <span className="font-semibold text-blue-600">{visits.length}</span> زيارة
+          </p>
+        </div>
+      </Card>
+
+      {/* New Analytics Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Doctors Performance Chart */}
+        <Card className="p-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5 text-blue-500" />
+              أداء الأطباء
+            </CardTitle>
+            <CardDescription>
+              عدد الزيارات لكل طبيب - {uniqueDoctors.length} طبيب نشط
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Bar
+                data={{
+                  labels: uniqueDoctors,
+                  datasets: [
+                    {
+                      label: "عدد الزيارات",
+                      data: uniqueDoctors.map(
+                        (doctor) => filteredVisits.filter((v) => v.doctorName === doctor).length
+                      ),
+                      backgroundColor: [
+                        "rgba(59, 130, 246, 0.8)",
+                        "rgba(16, 185, 129, 0.8)",
+                        "rgba(245, 101, 101, 0.8)",
+                        "rgba(251, 191, 36, 0.8)",
+                        "rgba(139, 92, 246, 0.8)",
+                        "rgba(236, 72, 153, 0.8)",
+                        "rgba(6, 182, 212, 0.8)",
+                      ],
+                      borderColor: [
+                        "rgb(59, 130, 246)",
+                        "rgb(16, 185, 129)",
+                        "rgb(245, 101, 101)",
+                        "rgb(251, 191, 36)",
+                        "rgb(139, 92, 246)",
+                        "rgb(236, 72, 153)",
+                        "rgb(6, 182, 212)",
+                      ],
+                      borderWidth: 2,
+                      borderRadius: 8,
+                    },
+                  ],
+                }}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    legend: {
+                      display: false,
+                    },
+                  },
+                  scales: {
+                    ...chartOptions.scales,
+                    x: {
+                      ...chartOptions.scales.x,
+                      ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Brands Performance Chart */}
+        <Card className="p-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Tag className="h-5 w-5 text-green-500" />
+              أداء العلامات التجارية
+            </CardTitle>
+            <CardDescription>
+              توزيع الزيارات حسب العلامة التجارية - {uniqueBrands.length} علامة تجارية
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Doughnut
+                data={{
+                  labels: uniqueBrands,
+                  datasets: [
+                    {
+                      data: uniqueBrands.map(
+                        (brand) => filteredVisits.filter((v) => v.brand === brand).length
+                      ),
+                      backgroundColor: [
+                        "rgba(59, 130, 246, 0.8)",
+                        "rgba(16, 185, 129, 0.8)",
+                        "rgba(245, 101, 101, 0.8)",
+                        "rgba(251, 191, 36, 0.8)",
+                        "rgba(139, 92, 246, 0.8)",
+                      ],
+                      borderColor: [
+                        "rgb(59, 130, 246)",
+                        "rgb(16, 185, 129)",
+                        "rgb(245, 101, 101)",
+                        "rgb(251, 191, 36)",
+                        "rgb(139, 92, 246)",
+                      ],
+                      borderWidth: 3,
+                    },
+                  ],
+                }}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    legend: {
+                      position: "bottom",
+                      labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                          size: 12,
+                        },
+                      },
+                    },
+                  },
+                }}
+              />
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Second Row of Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Clinics Performance Chart */}
+        <Card className="p-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-purple-500" />
+              أداء العيادات
+            </CardTitle>
+            <CardDescription>
+              عدد الزيارات لكل عيادة - {uniqueClinics.length} عيادة نشطة
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Bar
+                data={{
+                  labels: uniqueClinics.map((clinic) =>
+                    clinic.length > 15 ? clinic.substring(0, 15) + "..." : clinic
+                  ),
+                  datasets: [
+                    {
+                      label: "عدد الزيارات",
+                      data: uniqueClinics.map(
+                        (clinic) => filteredVisits.filter((v) => v.clinicName === clinic).length
+                      ),
+                      backgroundColor: "rgba(139, 92, 246, 0.8)",
+                      borderColor: "rgb(139, 92, 246)",
+                      borderWidth: 2,
+                      borderRadius: 8,
+                    },
+                  ],
+                }}
+                options={{
+                  ...chartOptions,
+                  indexAxis: "y",
+                  plugins: {
+                    ...chartOptions.plugins,
+                    legend: {
+                      display: false,
+                    },
+                  },
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Segments Performance Chart */}
+        <Card className="p-6 shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Tag className="h-5 w-5 text-blue-500" />
+              أداء الشرائح A & B
+            </CardTitle>
+            <CardDescription>مقارنة أداء الشرائح المختلفة للأطباء</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Bar
+                data={{
+                  labels: ["الشريحة A", "الشريحة B"],
+                  datasets: [
+                    {
+                      label: "عدد الزيارات",
+                      data: [
+                        filteredVisits.filter((v) => v.classification === "A").length,
+                        filteredVisits.filter((v) => v.classification === "B").length,
+                      ],
+                      backgroundColor: ["rgba(59, 130, 246, 0.8)", "rgba(16, 185, 129, 0.8)"],
+                      borderColor: ["rgb(59, 130, 246)", "rgb(16, 185, 129)"],
+                      borderWidth: 3,
+                      borderRadius: 12,
+                      borderSkipped: false,
+                    },
+                    {
+                      label: "إجمالي العينات",
+                      data: [
+                        filteredVisits
+                          .filter((v) => v.classification === "A")
+                          .reduce((sum, v) => sum + v.samplesCount, 0),
+                        filteredVisits
+                          .filter((v) => v.classification === "B")
+                          .reduce((sum, v) => sum + v.samplesCount, 0),
+                      ],
+                      backgroundColor: ["rgba(245, 101, 101, 0.8)", "rgba(251, 191, 36, 0.8)"],
+                      borderColor: ["rgb(245, 101, 101)", "rgb(251, 191, 36)"],
+                      borderWidth: 3,
+                      borderRadius: 12,
+                      borderSkipped: false,
+                    },
+                  ],
+                }}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    legend: {
+                      display: true,
+                      position: "top" as const,
+                      labels: {
+                        font: {
+                          family: "Cairo, sans-serif",
+                          size: 12,
+                          weight: "bold",
+                        },
+                        usePointStyle: true,
+                        padding: 20,
+                      },
+                    },
+                    tooltip: {
+                      ...chartOptions.plugins.tooltip,
+                      callbacks: {
+                        label: function (context: any) {
+                          const label = context.dataset.label || "";
+                          const value = context.parsed.y;
+                          return `${label}: ${value.toLocaleString("ar-SA")}`;
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    ...chartOptions.scales,
+                    y: {
+                      ...chartOptions.scales.y,
+                      beginAtZero: true,
+                      ticks: {
+                        ...chartOptions.scales.y.ticks,
+                        callback: function (value: any) {
+                          return value.toLocaleString("ar-SA");
+                        },
+                      },
+                    },
+                  },
+                  animation: {
+                    duration: 2000,
+                    easing: "easeInOutQuart",
+                  },
+                  interaction: {
+                    intersect: false,
+                    mode: "index",
+                  },
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Trends */}
+        {/* <Card className="shadow-lg border-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              اتجاهات الزيارات والإيرادات الشهرية (البيانات المفلترة)
+            </CardTitle>
+            <CardDescription>
+              مقارنة شهرية لعدد الزيارات والإيرادات المحققة - عرض {filteredVisits.length} من أصل {visits.length} زيارة
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Line data={{
+                ...monthlyTrendsData,
+                datasets: monthlyTrendsData.datasets.map(dataset => ({
+                  ...dataset,
+                  label: dataset.label + ` (${filteredVisits.length} زيارة مفلترة)`
+                }))
+              }} options={chartOptions} />
+            </div>
+          </CardContent>
+        </Card> */}
+
+        {/* Specialty Distribution */}
+        <Card className="shadow-lg border-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-green-500" />
+              توزيع الزيارات حسب التخصص (البيانات المفلترة)
+            </CardTitle>
+            <CardDescription>
+              نسبة الزيارات لكل تخصص طبي - إجمالي {filteredVisits.length} زيارة
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Doughnut
+                data={{
+                  ...specialtyData,
+                  labels: [...new Set(filteredVisits.map((v) => v.specialty))],
+                  datasets: [
+                    {
+                      ...specialtyData.datasets[0],
+                      data: [...new Set(filteredVisits.map((v) => v.specialty))].map(
+                        (specialty) =>
+                          filteredVisits.filter((v) => v.specialty === specialty).length
+                      ),
+                    },
+                  ],
+                }}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    legend: {
+                      ...chartOptions.plugins.legend,
+                      position: "right" as const,
+                    },
+                  },
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Clinic Comparison */}
+        <Card className="shadow-lg border-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-purple-500" />
+              مقارنة أداء العيادات (البيانات المفلترة)
+            </CardTitle>
+            <CardDescription>
+              مقارنة الزيارات والإيرادات بين العيادات المختلفة - {uniqueClinics.length} عيادة نشطة
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Bar
+                data={{
+                  labels: [...new Set(filteredVisits.map((v) => v.clinicName))],
+                  datasets: [
+                    {
+                      ...clinicComparisonData.datasets[0],
+                      label: `عدد الزيارات (${filteredVisits.length} إجمالي)`,
+                      data: [...new Set(filteredVisits.map((v) => v.clinicName))].map(
+                        (clinic) => filteredVisits.filter((v) => v.clinicName === clinic).length
+                      ),
+                    },
+                    {
+                      ...clinicComparisonData.datasets[1],
+                      label: "الإيرادات المقدرة (بالآلاف)",
+                      data: [...new Set(filteredVisits.map((v) => v.clinicName))].map((clinic) =>
+                        Math.round(
+                          (filteredVisits.filter((v) => v.clinicName === clinic).length * 500) /
+                            1000
+                        )
+                      ),
+                    },
+                  ],
+                }}
+                options={{
+                  ...chartOptions,
+                  scales: {
+                    ...chartOptions.scales,
+                    x: {
+                      ...chartOptions.scales.x,
+                      stacked: false,
+                    },
+                    y: {
+                      ...chartOptions.scales.y,
+                      stacked: false,
+                    },
+                  },
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Product Performance Area Chart */}
+        <Card className="shadow-lg border-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-orange-500" />
+              أداء المنتجات
+            </CardTitle>
+            <CardDescription>تحليل شامل لأداء المنتجات ورضا العملاء</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Line
+                data={{
+                  labels: updatedAnalyticsData.productPerformance.labels,
+                  datasets: [
+                    {
+                      label: "المبيعات (%)",
+                      data: updatedAnalyticsData.productPerformance.sales,
+                      borderColor: "#f59e0b",
+                      backgroundColor: "rgba(245, 158, 11, 0.1)",
+                      borderWidth: 3,
+                      fill: true,
+                      tension: 0.4,
+                      pointBackgroundColor: "#f59e0b",
+                      pointBorderColor: "#ffffff",
+                      pointBorderWidth: 2,
+                      pointRadius: 6,
+                    },
+                    {
+                      label: "رضا العملاء (%)",
+                      data: updatedAnalyticsData.productPerformance.satisfaction,
+                      borderColor: "#8b5cf6",
+                      backgroundColor: "rgba(139, 92, 246, 0.1)",
+                      borderWidth: 3,
+                      fill: true,
+                      tension: 0.4,
+                      pointBackgroundColor: "#8b5cf6",
+                      pointBorderColor: "#ffffff",
+                      pointBorderWidth: 2,
+                      pointRadius: 6,
+                    },
+                  ],
+                }}
+                options={chartOptions}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Summary Statistics */}
+
+      {/* Visits Table */}
+      <Card className="shadow-lg border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            جدول الزيارات
+          </CardTitle>
+          <CardDescription>عرض تفصيلي لجميع الزيارات المسجلة</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table dir="rtl" className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border border-gray-300 px-4 py-2 text-right">التاريخ</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">الطبيب</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">العيادة</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">الشريحة</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">التخصص</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">المنتجات</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">عدد العينات</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">المندوب</th>
+                  <th className="border border-gray-300 px-4 py-2 text-center">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredVisits.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={9}
+                      className="border border-gray-300 px-4 py-8 text-center text-gray-500"
+                    >
+                      لا توجد زيارات متاحة
+                    </td>
+                  </tr>
+                ) : (
+                  filteredVisits.map((visit, index) => (
+                    <tr key={visit._id} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 px-4 py-2">{visit.visitDate}</td>
+                      <td className="border border-gray-300 px-4 py-2">{visit.doctorName}</td>
+                      <td className="border border-gray-300 px-4 py-2">{visit.clinicName}</td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        <Badge variant="outline">{visit.classification}</Badge>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        <Badge variant="secondary">{visit.specialty}</Badge>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        <div className="flex flex-wrap gap-1">
+                          {visit.products.map((product, idx) => (
+                            <Badge key={idx} variant="default" className="text-xs">
+                              {product}
+                            </Badge>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">
+                        <Badge variant="destructive">{visit.samplesCount}</Badge>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2">{visit.medicalRepName}</td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => navigate(`/doctor-card/${visit.doctorId}`)}
+                          >
+                            عرض الطبيب
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export default Dashboard;
+export default ClinicsAnalytics;

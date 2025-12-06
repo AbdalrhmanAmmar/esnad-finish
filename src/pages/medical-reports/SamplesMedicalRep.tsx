@@ -15,7 +15,7 @@ import {
   getSampleRequestsByUserId, 
   UserSampleRequest, 
   UserSampleRequestsResponse,
-  exportUserSampleRequestsToExcel 
+  exportMedicalRepSampleRequests 
 } from '@/api/SampleRequests';
 import {
   Table,
@@ -137,15 +137,13 @@ const SamplesMedicalRep: React.FC = () => {
       setExportLoading(true);
       
       const exportParams = {
-        status: filters.status !== 'all' ? filters.status : undefined,
+        medicalRepId: user._id,
+        status: filters.status !== 'all' ? filters.status : 'all',
         startDate: filters.startDate ? format(filters.startDate, 'yyyy-MM-dd') : undefined,
         endDate: filters.endDate ? format(filters.endDate, 'yyyy-MM-dd') : undefined,
-        search: filters.search || undefined,
-        doctor: filters.doctor || undefined,
-        product: filters.product || undefined,
       };
       
-      const blob = await exportUserSampleRequestsToExcel(user._id, exportParams);
+      const blob = await exportMedicalRepSampleRequests(exportParams);
       
       // Create download link
       const url = window.URL.createObjectURL(blob);
@@ -164,17 +162,10 @@ const SamplesMedicalRep: React.FC = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      toast({
-        title: 'نجح التصدير',
-        description: 'تم تصدير البيانات بنجاح',
-      });
+      toast({ title: 'نجح التصدير', description: 'تم تصدير البيانات بنجاح' });
     } catch (error: any) {
       console.error('Export error:', error);
-      toast({
-        title: 'خطأ في التصدير',
-        description: error.message || 'حدث خطأ أثناء تصدير البيانات',
-        variant: 'destructive',
-      });
+      toast({ title: 'خطأ في التصدير', description: error.message || 'حدث خطأ أثناء تصدير البيانات', variant: 'destructive' });
     } finally {
       setExportLoading(false);
     }
@@ -635,3 +626,4 @@ const SamplesMedicalRep: React.FC = () => {
 };
 
 export default SamplesMedicalRep;
+ 

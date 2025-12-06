@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from "./api";
 
 export interface SampleRequest {
   _id?: string;
@@ -9,7 +9,7 @@ export interface SampleRequest {
   quantity: number;
   notes?: string;
   medicalRep?: string;
-  status?: 'pending' | 'approved' | 'rejected' | 'delivered';
+  status?: "pending" | "approved" | "rejected" | "delivered";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -30,26 +30,28 @@ export interface SampleRequestsListResponse {
 }
 
 // Create a new sample request
-export const createSampleRequest = async (requestData: Omit<SampleRequest, '_id' | 'medicalRep' | 'status' | 'createdAt' | 'updatedAt'>): Promise<SampleRequestResponse> => {
+export const createSampleRequest = async (
+  requestData: Omit<SampleRequest, "_id" | "medicalRep" | "status" | "createdAt" | "updatedAt">
+): Promise<SampleRequestResponse> => {
   try {
-    const response = await api.post('/sample-requests', requestData);
+    const response = await api.post("/sample-requests", requestData);
     return {
       success: true,
       data: response.data,
-      message: 'تم إرسال طلب العينة بنجاح'
+      message: "تم إرسال طلب العينة بنجاح",
     };
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء إرسال الطلب');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء إرسال الطلب");
   }
 };
 
 // Get all sample requests for the current medical rep
 export const getSampleRequests = async (): Promise<SampleRequestsListResponse> => {
   try {
-    const response = await api.get('/sample-requests');
+    const response = await api.get("/sample-requests");
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'فشل في جلب طلبات العينات');
+    throw new Error(error.response?.data?.message || "فشل في جلب طلبات العينات");
   }
 };
 
@@ -59,27 +61,32 @@ export const getSampleRequestById = async (id: string): Promise<SampleRequestRes
     const response = await api.get(`/sample-requests/${id}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'فشل في جلب تفاصيل طلب العينة');
+    throw new Error(error.response?.data?.message || "فشل في جلب تفاصيل طلب العينة");
   }
 };
 
 // Update sample request status (for admins/supervisors)
-export const updateSampleRequestStatus = async (id: string, status: 'approved' | 'rejected' | 'delivered'): Promise<SampleRequestResponse> => {
+export const updateSampleRequestStatus = async (
+  id: string,
+  status: "approved" | "rejected" | "delivered"
+): Promise<SampleRequestResponse> => {
   try {
     const response = await api.patch(`/sample-requests/${id}/status`, { status });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'فشل في تحديث حالة طلب العينة');
+    throw new Error(error.response?.data?.message || "فشل في تحديث حالة طلب العينة");
   }
 };
 
 // Delete a sample request
-export const deleteSampleRequest = async (id: string): Promise<{ success: boolean; message: string }> => {
+export const deleteSampleRequest = async (
+  id: string
+): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await api.delete(`/sample-requests/${id}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء حذف الطلب');
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء حذف الطلب");
   }
 };
 
@@ -87,29 +94,32 @@ export const deleteSampleRequest = async (id: string): Promise<{ success: boolea
 export const updateSampleRequestBySupervisor = async (
   supervisorId: string,
   requestId: string,
-  status: 'approved' | 'cancelled',
+  status: "approved" | "cancelled",
   notes?: string
 ): Promise<SampleRequestResponse> => {
   try {
-    console.log('API call - updateSampleRequestBySupervisor:', {
+    console.log("API call - updateSampleRequestBySupervisor:", {
       supervisorId,
       requestId,
       status,
       notes,
-      url: `/sample-requests/supervisor/${supervisorId}/${requestId}/status`
+      url: `/sample-requests/supervisor/${supervisorId}/${requestId}/status`,
     });
 
-    const response = await api.put(`/sample-requests/supervisor/${supervisorId}/${requestId}/status`, {
-      status,
-      notes
-    });
+    const response = await api.put(
+      `/sample-requests/supervisor/${supervisorId}/${requestId}/status`,
+      {
+        status,
+        notes,
+      }
+    );
 
-    console.log('API response:', response.data);
+    console.log("API response:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error('API error:', error);
-    console.error('Error response:', error.response?.data);
-    throw new Error(error.response?.data?.message || 'حدث خطأ أثناء تحديث حالة الطلب');
+    console.error("API error:", error);
+    console.error("Error response:", error.response?.data);
+    throw new Error(error.response?.data?.message || "حدث خطأ أثناء تحديث حالة الطلب");
   }
 };
 
@@ -127,7 +137,7 @@ export interface SupervisorSampleRequest {
     drName: string;
   };
   quantity: number;
-  status: 'pending' | 'approved' | 'cancelled';
+  status: "pending" | "approved" | "cancelled";
   medicalRep: {
     _id: string;
     username: string;
@@ -162,7 +172,7 @@ export interface SupervisorSampleRequestsResponse {
 export interface GetSupervisorSampleRequestsParams {
   page?: number;
   limit?: number;
-  status?: 'pending' | 'approved' | 'cancelled';
+  status?: "pending" | "approved" | "cancelled";
   startDate?: string;
   endDate?: string;
   search?: string;
@@ -175,42 +185,46 @@ export const getSupervisorSampleRequests = async (
 ): Promise<SupervisorSampleRequestsResponse> => {
   try {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
 
-    const url = `/sample-requests/supervisor/${supervisorId}/requests${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `/sample-requests/supervisor/${supervisorId}/requests${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
     const response = await api.get(url);
     return response.data;
   } catch (error: any) {
-    console.error('Error fetching supervisor sample requests:', error);
-    throw new Error(error.response?.data?.message || 'Failed to fetch sample requests');
+    console.error("Error fetching supervisor sample requests:", error);
+    throw new Error(error.response?.data?.message || "Failed to fetch sample requests");
   }
 };
 
 // Export sample requests to Excel
 export const exportSupervisorSampleRequestsToExcel = async (
   supervisorId: string,
-  params?: Omit<GetSupervisorSampleRequestsParams, 'page' | 'limit'>
+  params?: Omit<GetSupervisorSampleRequestsParams, "page" | "limit">
 ): Promise<Blob> => {
   try {
     const queryParams = new URLSearchParams();
-    
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
-    
-    const url = `/sample-requests/supervisor/${supervisorId}/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    const response = await api.get(url, { responseType: 'blob' });
+
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `/sample-requests/supervisor/${supervisorId}/export${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
+    const response = await api.get(url, { responseType: "blob" });
     return response.data;
   } catch (error: any) {
-    console.error('Error exporting supervisor sample requests:', error);
-    throw new Error(error.response?.data?.message || 'Failed to export sample requests');
+    console.error("Error exporting supervisor sample requests:", error);
+    throw new Error(error.response?.data?.message || "Failed to export sample requests");
   }
 };
 
@@ -228,7 +242,7 @@ export interface AdminSampleRequest {
     drName: string;
   };
   quantity: number;
-  status: 'pending' | 'approved' | 'cancelled';
+  status: "pending" | "approved" | "cancelled";
   medicalRep: {
     _id: string;
     username: string;
@@ -261,7 +275,7 @@ export interface AdminSampleRequestsResponse {
 export interface GetAdminSampleRequestsParams {
   page?: number;
   limit?: number;
-  status?: 'pending' | 'approved' | 'cancelled';
+  status?: "pending" | "approved" | "cancelled";
   medicalRep?: string;
   doctor?: string;
   product?: string;
@@ -276,49 +290,51 @@ export const getAdminSampleRequests = async (
 ): Promise<AdminSampleRequestsResponse> => {
   try {
     const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.medicalRep) queryParams.append('medicalRep', params.medicalRep);
-    if (params?.doctor) queryParams.append('doctor', params.doctor);
-    if (params?.product) queryParams.append('product', params.product);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.medicalRep) queryParams.append("medicalRep", params.medicalRep);
+    if (params?.doctor) queryParams.append("doctor", params.doctor);
+    if (params?.product) queryParams.append("product", params.product);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.search) queryParams.append("search", params.search);
 
-    const url = `/sample-requests/admin/${adminId}/requests/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/sample-requests/admin/${adminId}/requests/${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
     const response = await api.get(url);
     return response.data;
   } catch (error: any) {
-    console.error('Error fetching admin sample requests:', error);
-    throw new Error(error.response?.data?.message || 'Failed to fetch sample requests');
+    console.error("Error fetching admin sample requests:", error);
+    throw new Error(error.response?.data?.message || "Failed to fetch sample requests");
   }
 };
 
 export const exportAdminSampleRequestsToExcel = async (
   adminId: string,
-  params?: Omit<GetAdminSampleRequestsParams, 'page' | 'limit'>
+  params?: Omit<GetAdminSampleRequestsParams, "page" | "limit">
 ): Promise<Blob> => {
   try {
     const queryParams = new URLSearchParams();
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.medicalRep) queryParams.append('medicalRep', params.medicalRep);
-    if (params?.doctor) queryParams.append('doctor', params.doctor);
-    if (params?.product) queryParams.append('product', params.product);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.medicalRep) queryParams.append("medicalRep", params.medicalRep);
+    if (params?.doctor) queryParams.append("doctor", params.doctor);
+    if (params?.product) queryParams.append("product", params.product);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.search) queryParams.append("search", params.search);
 
-    const url = `/admin/${adminId}/sample-requests${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    const response = await api.get(url, { responseType: 'blob' });
+    const url = `/admin/${adminId}/sample-requests${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
+    const response = await api.get(url, { responseType: "blob" });
     return response.data;
   } catch (error: any) {
-    console.error('Error exporting admin sample requests:', error);
-    throw new Error(error.response?.data?.message || 'Failed to export sample requests');
+    console.error("Error exporting admin sample requests:", error);
+    throw new Error(error.response?.data?.message || "Failed to export sample requests");
   }
 };
-
-
 
 // User Sample Requests Types and Functions
 export interface UserSampleRequest {
@@ -344,7 +360,7 @@ export interface UserSampleRequest {
     district?: string;
   };
   quantity: number;
-  status: 'pending' | 'approved' | 'cancelled';
+  status: "pending" | "approved" | "cancelled";
   medicalRep?: {
     _id: string;
     username: string;
@@ -401,7 +417,7 @@ export interface UserSampleRequestsResponse {
 export interface GetUserSampleRequestsParams {
   page?: number;
   limit?: number;
-  status?: 'pending' | 'approved' | 'cancelled';
+  status?: "pending" | "approved" | "cancelled";
   doctor?: string;
   product?: string;
   startDate?: string;
@@ -416,45 +432,65 @@ export const getSampleRequestsByUserId = async (
 ): Promise<UserSampleRequestsResponse> => {
   try {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.doctor) queryParams.append('doctor', params.doctor);
-    if (params?.product) queryParams.append('product', params.product);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
 
-    const url = `/sample-requests/user/${userId}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.doctor) queryParams.append("doctor", params.doctor);
+    if (params?.product) queryParams.append("product", params.product);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `/sample-requests/user/${userId}${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
     const response = await api.get(url);
     return response.data;
   } catch (error: any) {
-    console.error('Error fetching user sample requests:', error);
-    throw new Error(error.response?.data?.message || 'فشل في جلب طلبات العينات للمستخدم');
+    console.error("Error fetching user sample requests:", error);
+    throw new Error(error.response?.data?.message || "فشل في جلب طلبات العينات للمستخدم");
   }
 };
 
 // Export user sample requests to Excel
 export const exportUserSampleRequestsToExcel = async (
   userId: string,
-  params?: Omit<GetUserSampleRequestsParams, 'page' | 'limit'>
+  params?: Omit<GetUserSampleRequestsParams, "page" | "limit">
 ): Promise<Blob> => {
   try {
     const queryParams = new URLSearchParams();
-    
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.doctor) queryParams.append('doctor', params.doctor);
-    if (params?.product) queryParams.append('product', params.product);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
 
-    const url = `/sample-requests/user/${userId}/export${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    const response = await api.get(url, { responseType: 'blob' });
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.doctor) queryParams.append("doctor", params.doctor);
+    if (params?.product) queryParams.append("product", params.product);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `/sample-requests/user/${userId}/export${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
+    const response = await api.get(url, { responseType: "blob" });
     return response.data;
   } catch (error: any) {
-    console.error('Error exporting user sample requests:', error);
-    throw new Error(error.response?.data?.message || 'فشل في تصدير طلبات العينات');
+    console.error("Error exporting user sample requests:", error);
+    throw new Error(error.response?.data?.message || "فشل في تصدير طلبات العينات");
   }
+};
+
+// Export medical rep sample requests via common endpoint
+export const exportMedicalRepSampleRequests = async (params?: {
+  medicalRepId?: string;
+  status?: "pending" | "approved" | "cancelled" | "all";
+  startDate?: string;
+  endDate?: string;
+}): Promise<Blob> => {
+  const queryParams = new URLSearchParams();
+  if (params?.medicalRepId) queryParams.append("medicalRepId", params.medicalRepId);
+  if (params?.status) queryParams.append("status", params.status);
+  if (params?.startDate) queryParams.append("startDate", params.startDate);
+  if (params?.endDate) queryParams.append("endDate", params.endDate);
+  const response = await api.get(`/sample-requests/export/medical-rep`, { responseType: "blob" });
+  return response.data;
 };

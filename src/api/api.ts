@@ -1,21 +1,16 @@
 import axios from "axios";
 import { useAuthStore } from "../stores/authStore";
 
-
 // إعداد Axios
 const api = axios.create({
-  // baseURL: "http://localhost:4000/api",
-  // baseURL:"https://esnad-serevr.onrender.com/api",
-  baseURL:"https://api.menareps.com/api",
-  // baseURL:"http://157.173.119.236/api",
+  baseURL: "http://localhost:4000/api",
+  // baseURL:"https://api.menareps.com/api",
   timeout: 20000,
   headers: {
     "Content-Type": "application/json",
   },
   withCredentials: true,
 });
-
-
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token || localStorage.getItem("token");
@@ -43,16 +38,15 @@ api.interceptors.response.use(
 // Login API function
 export const loginUser = async (username: string, password: string) => {
   try {
-    const response = await api.post('/auth/login', { username, password });
+    const response = await api.post("/auth/login", { username, password });
     return response.data;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     throw error;
   }
 };
 
 // Verify token API function
-
 
 // Add your other API functions here
 export const fetchData = async () => {
