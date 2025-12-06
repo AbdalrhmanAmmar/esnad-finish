@@ -25,11 +25,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear token from both localStorage and auth store
+      const requestUrl = error.config?.url || "";
+      const isLoginRequest = requestUrl.includes("/auth/login");
+      if (isLoginRequest) {
+        return Promise.reject(new Error("اسم المستخدم أو كلمة المرور غير صحيحة"));
+      }
       localStorage.removeItem("token");
       useAuthStore.getState().logout();
-      // Redirect to login page
       window.location.href = "/login";
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   }
