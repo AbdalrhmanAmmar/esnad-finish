@@ -370,6 +370,7 @@ const PharmaciesManagement = () => {
                         <TableHead className="text-right">الحي</TableHead>
                         <TableHead className="text-right">المسؤول</TableHead>
                         <TableHead className="text-right">تاريخ الإنشاء</TableHead>
+                        <TableHead className="text-right">الإجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -422,6 +423,17 @@ const PharmaciesManagement = () => {
                               <span className="text-sm">
                                 {new Date(pharmacy.createdAt).toLocaleDateString('ar-EG')}
                               </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/management/pharmacies/edit/${pharmacy._id}`)}
+                              >
+                                تعديل
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>

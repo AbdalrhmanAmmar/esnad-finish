@@ -27,6 +27,7 @@ import DoctorsUpload from "./pages/DoctorsUpload";
 import PharmaciesUpload from "./pages/PharmaciesUpload";
 import PharmaciesManagement from "./pages/PharmaciesManagement";
 import AddPharmacy from "./pages/AddPharmacy";
+import EditPharmacy from "./pages/EditPharmacy";
 import SampleRequestForm from "./pages/SampleRequestForm";
 import ClientsList from "./pages/ClientsList";
 import CreateAdmin from "./pages/CreateAdmin";
@@ -462,6 +463,14 @@ const App = () => (
                       element={
                         <ProtectedRoute requiredRoles={["ADMIN", "admin", "manager"]}>
                           <AddPharmacy />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/management/pharmacies/edit/:id"
+                      element={
+                        <ProtectedRoute requiredRoles={["ADMIN", "admin", "manager"]}>
+                          <EditPharmacy />
                         </ProtectedRoute>
                       }
                     />
