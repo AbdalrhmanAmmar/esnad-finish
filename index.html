@@ -14,5 +14,11 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <script>
+      if (window.location.hostname === "app.menareps.com") {
+        window.location.href = "https://www.app.menareps.com" + window.location.pathname;
+      }
+    </script>
   </body>
 </html>
