@@ -1,20 +1,5 @@
 {
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "app.menareps.com"
-        }
-      ],
-      "destination": "https://www.app.menareps.com/$1",
-      "permanent": true
-    }
-  ],
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm ci",
-  "framework": "vite"
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
