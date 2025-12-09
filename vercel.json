@@ -1,8 +1,14 @@
 {
   "redirects": [
     {
-      "source": "/:path*",
-      "destination": "https://www.app.menareps.com/:path*",
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.menareps.com"
+        }
+      ],
+      "destination": "https://www.app.menareps.com/$1",
       "permanent": true
     }
   ],
