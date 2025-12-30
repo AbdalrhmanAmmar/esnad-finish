@@ -86,9 +86,7 @@ const App = () => (
               <SidebarInset>
                 <header className="h-14 flex items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                   <div className="flex items-center gap-2 px-4" style={{ direction: "rtl" }}>
-                    <h1 className="text-lg font-semibold text-foreground">
-                      نظام إدارة المندوبين الطبيين
-                    </h1>
+                    <h1 className="text-lg font-semibold text-foreground">نظام طبي</h1>
                   </div>
                   <SidebarTrigger className="mr-4 ml-auto " />
                 </header>
