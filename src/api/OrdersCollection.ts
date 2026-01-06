@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from "./api";
 
 export interface ProductData {
   productId: string;
@@ -82,20 +82,22 @@ export const getSalesRepProductsData = async (
   filters: OrderFilters = {}
 ): Promise<OrdersResponse> => {
   const params = new URLSearchParams();
-  
-  if (filters.page) params.append('page', filters.page.toString());
-  if (filters.limit) params.append('limit', filters.limit.toString());
-  if (filters.productId) params.append('productId', filters.productId);
-  if (filters.salesRepId) params.append('salesRepId', filters.salesRepId);
-  if (filters.salesRepName) params.append('SalesRepName', filters.salesRepName);
-  if (filters.pharmacyName) params.append('pharmacy', filters.pharmacyName);
-  if (filters.startDate) params.append('startDate', filters.startDate);
-  if (filters.endDate) params.append('endDate', filters.endDate);
-  if (filters.orderStatus) params.append('orderStatus', filters.orderStatus);
-  if (filters.status) params.append('orderStatus', filters.status);
-  if (filters.search) params.append('search', filters.search);
 
-  const response = await api.get(`/financial-pharmacy/${adminId}/sales-products?${params.toString()}`);
+  if (filters.page) params.append("page", filters.page.toString());
+  if (filters.limit) params.append("limit", filters.limit.toString());
+  if (filters.productId) params.append("productId", filters.productId);
+  if (filters.salesRepId) params.append("salesRepId", filters.salesRepId);
+  if (filters.salesRepName) params.append("SalesRepName", filters.salesRepName);
+  if (filters.pharmacyName) params.append("pharmacy", filters.pharmacyName);
+  if (filters.startDate) params.append("startDate", filters.startDate);
+  if (filters.endDate) params.append("endDate", filters.endDate);
+  if (filters.orderStatus) params.append("orderStatus", filters.orderStatus);
+  if (filters.status) params.append("orderStatus", filters.status);
+  if (filters.search) params.append("search", filters.search);
+
+  const response = await api.get(
+    `/financial-pharmacy/${adminId}/sales-products?${params.toString()}`
+  );
   return response.data;
 };
 
@@ -104,27 +106,35 @@ export const exportOrdersData = async (
   filters: OrderFilters = {}
 ): Promise<Blob> => {
   const params = new URLSearchParams();
-  
-  if (filters.productId) params.append('productId', filters.productId);
-  if (filters.salesRepId) params.append('salesRepId', filters.salesRepId);
-  if (filters.startDate) params.append('startDate', filters.startDate);
-  if (filters.endDate) params.append('endDate', filters.endDate);
 
-  const response = await api.get(`/financial-pharmacy/export/sales/${adminId}?${params.toString()}`, {
-    responseType: 'blob'
-  });
+  if (filters.productId) params.append("productId", filters.productId);
+  if (filters.salesRepId) params.append("salesRepId", filters.salesRepId);
+  if (filters.startDate) params.append("startDate", filters.startDate);
+  if (filters.endDate) params.append("endDate", filters.endDate);
+
+  const response = await api.get(
+    `/financial-pharmacy/export/sales/${adminId}?${params.toString()}`,
+    {
+      responseType: "blob",
+    }
+  );
   return response.data;
 };
 
-export const updateOrderStatus = async (adminId: string, requestId: string, status: string, notes?: string) => {
+export const updateOrderStatus = async (
+  adminId: string,
+  requestId: string,
+  status: string,
+  notes?: string
+) => {
   try {
     const response = await api.put(`/financial-pharmacy/order-status/${adminId}/${requestId}`, {
       status,
-      notes
+      notes,
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'فشل في تحديث حالة الطلب');
+    throw new Error(error.response?.data?.message || "فشل في تحديث حالة الطلب");
   }
 };
 
@@ -158,28 +168,31 @@ export interface FinalOrdersResponse {
 
 export const getFinalOrders = async (): Promise<FinalOrdersResponse> => {
   try {
-    const response = await api.get('/order-collector/final-orders');
+    const response = await api.get("/order-collector/final-orders");
     return response.data;
   } catch (error) {
-    console.error('Error fetching final orders:', error);
+    console.error("Error fetching final orders:", error);
     throw error;
   }
 };
 
 export interface UpdateFinalOrderData {
-  FinalOrderStatusValue?: 'pending' | 'approved' | 'rejected';
+  FinalOrderStatusValue?: "pending" | "approved" | "rejected";
   orderDetails?: Array<{
     product: string;
     quantity: number;
   }>;
 }
 
-export const updateFinalOrder = async (orderId: string, updateData: UpdateFinalOrderData): Promise<{ success: boolean; message: string; data: FinalOrderData }> => {
+export const updateFinalOrder = async (
+  orderId: string,
+  updateData: UpdateFinalOrderData
+): Promise<{ success: boolean; message: string; data: FinalOrderData }> => {
   try {
     const response = await api.put(`/order-collector/final-orders/${orderId}`, updateData);
     return response.data;
   } catch (error) {
-    console.error('Error updating final order:', error);
+    console.error("Error updating final order:", error);
     throw error;
   }
 };
@@ -188,7 +201,7 @@ export const updateFinalOrder = async (orderId: string, updateData: UpdateFinalO
 export interface FilteredOrdersParams {
   page?: number;
   limit?: number;
-  status?: 'pending' | 'approved' | 'rejected';
+  status?: "pending" | "approved" | "rejected";
   salesRep?: string;
   pharmacy?: string;
   startDate?: string;
@@ -208,85 +221,137 @@ export interface FilteredOrdersResponse {
   data: FinalOrderData[];
 }
 
-export const getOrdersWithFinalStatus = async (params: FilteredOrdersParams = {}): Promise<FilteredOrdersResponse> => {
+export const getOrdersWithFinalStatus = async (
+  params: FilteredOrdersParams = {}
+): Promise<FilteredOrdersResponse> => {
   try {
     const queryParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && value !== "") {
         queryParams.append(key, value.toString());
       }
     });
 
-    const response = await api.get(`/pharmacy-requests/sales-rep/admin/final-orders?${queryParams.toString()}`);
+    const response = await api.get(
+      `/pharmacy-requests/sales-rep/admin/final-orders?${queryParams.toString()}`
+    );
     return response.data;
   } catch (error) {
-    console.error('Error fetching filtered orders:', error);
+    console.error("Error fetching filtered orders:", error);
     throw error;
   }
 };
 
 // Final orders list with filters (OrdersCollector)
-export const getFinalOrdersFiltered = async (params: FilteredOrdersParams = {}): Promise<FilteredOrdersResponse> => {
+export const getFinalOrdersFiltered = async (
+  params: FilteredOrdersParams = {}
+): Promise<FilteredOrdersResponse> => {
   try {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.status && params.status !== 'all') queryParams.append('status', params.status);
-    if (params.salesRep && params.salesRep !== 'all') queryParams.append('SalesRepName', params.salesRep);
-    if (params.pharmacy && params.pharmacy !== 'all') queryParams.append('pharmacy', params.pharmacy);
-    if (params.startDate) queryParams.append('startDate', params.startDate);
-    if (params.endDate) queryParams.append('endDate', params.endDate);
-    if (params.search) queryParams.append('search', params.search);
+    if (params.page) queryParams.append("page", params.page.toString());
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.status && params.status !== "all") queryParams.append("status", params.status);
+    if (params.salesRep && params.salesRep !== "all")
+      queryParams.append("SalesRepName", params.salesRep);
+    if (params.pharmacy && params.pharmacy !== "all")
+      queryParams.append("pharmacy", params.pharmacy);
+    if (params.startDate) queryParams.append("startDate", params.startDate);
+    if (params.endDate) queryParams.append("endDate", params.endDate);
+    if (params.search) queryParams.append("search", params.search);
     const response = await api.get(`/order-collector/final-orders?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching final orders with filters:', error);
+    console.error("Error fetching final orders with filters:", error);
     throw error;
   }
 };
 
 // Get sales representatives for filter
-export const getSalesReps = async (): Promise<{ success: boolean; data: Array<{ _id: string; firstName: string; lastName: string }> }> => {
+export const getSalesReps = async (): Promise<{
+  success: boolean;
+  data: Array<{ _id: string; firstName: string; lastName: string }>;
+}> => {
   try {
-    const response = await api.get('/users/sales-reps');
+    const response = await api.get("/users/sales-reps");
     return response.data;
   } catch (error) {
-    console.error('Error fetching sales reps:', error);
+    console.error("Error fetching sales reps:", error);
     throw error;
   }
 };
 
 // Get pharmacies for filter
-export const getPharmacies = async (): Promise<{ success: boolean; data: Array<{ _id: string; customerSystemDescription: string }> }> => {
+export const getPharmacies = async (): Promise<{
+  success: boolean;
+  data: Array<{ _id: string; customerSystemDescription: string }>;
+}> => {
   try {
-    const response = await api.get('/pharmacies/list');
+    const response = await api.get("/pharmacies/list");
     return response.data;
   } catch (error) {
-    console.error('Error fetching pharmacies:', error);
+    console.error("Error fetching pharmacies:", error);
     throw error;
   }
 };
 
 // تصدير الطلبيات النهائية إلى Excel
-export const exportFinalOrdersToExcel = async (params: FilteredOrdersParams = {}): Promise<Blob> => {
+export const exportFinalOrdersToExcel = async (
+  params: FilteredOrdersParams = {}
+): Promise<Blob> => {
   try {
     const queryParams = new URLSearchParams();
-    
-    if (params.status && params.status !== 'all') queryParams.append('status', params.status);
-    if (params.salesRep && params.salesRep !== 'all') queryParams.append('SalesRepName', params.salesRep);
-    if (params.pharmacy && params.pharmacy !== 'all') queryParams.append('pharmacy', params.pharmacy);
-    if (params.startDate) queryParams.append('startDate', params.startDate);
-    if (params.endDate) queryParams.append('endDate', params.endDate);
-    if (params.search) queryParams.append('search', params.search);
 
-    const response = await api.get(`/order-collector/final-orders/export?${queryParams.toString()}`, {
-      responseType: 'blob'
-    });
-    
+    if (params.status && params.status !== "all") queryParams.append("status", params.status);
+    if (params.salesRep && params.salesRep !== "all")
+      queryParams.append("SalesRepName", params.salesRep);
+    if (params.pharmacy && params.pharmacy !== "all")
+      queryParams.append("pharmacy", params.pharmacy);
+    if (params.startDate) queryParams.append("startDate", params.startDate);
+    if (params.endDate) queryParams.append("endDate", params.endDate);
+    if (params.search) queryParams.append("search", params.search);
+
+    const response = await api.get(
+      `/order-collector/final-orders/export?${queryParams.toString()}`,
+      {
+        responseType: "blob",
+      }
+    );
+
     return response.data;
-   } catch (error) {
-     console.error('Error exporting final orders:', error);
-     throw error;
-   }
- };
+  } catch (error) {
+    console.error("Error exporting final orders:", error);
+    throw error;
+  }
+};
+
+// تصدير المنتجات المقبولة فقط إلى Excel (كشف منتجات تفصيلي)
+export const exportApprovedProductsOnly = async (
+  params: FilteredOrdersParams = {}
+): Promise<Blob> => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    // إرسال الفلاتر المطلوبة فقط لعملية التصدير
+    if (params.salesRep && params.salesRep !== "all")
+      queryParams.append("salesRep", params.salesRep);
+    if (params.pharmacy && params.pharmacy !== "all")
+      queryParams.append("pharmacy", params.pharmacy);
+    if (params.startDate) queryParams.append("startDate", params.startDate);
+    if (params.endDate) queryParams.append("endDate", params.endDate);
+    if (params.search) queryParams.append("search", params.search);
+
+    // استدعاء المسار الجديد الذي أنشأناه في الـ Backend
+    const response = await api.get(
+      `/order-collector/approved-products/export?${queryParams.toString()}`,
+      {
+        responseType: "blob", // مهم جداً لاستلام ملف Excel
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error exporting approved products:", error);
+    throw error;
+  }
+};
